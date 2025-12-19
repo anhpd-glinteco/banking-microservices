@@ -1,0 +1,237 @@
+@import '../../styles/global.scss';
+
+.history-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    height: 100%;
+
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+
+        h3 {
+            margin: 0;
+        }
+
+        .refresh-btn-small {
+            background: rgba($primary-color, 0.1);
+            color: $primary-color;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+
+            &:hover:not(:disabled) {
+                background: rgba($primary-color, 0.2);
+                transform: rotate(180deg);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                animation: spin 1s linear infinite;
+            }
+        }
+    }
+
+    .error-message {
+        background: rgba($danger-color, 0.1);
+        border: 1px solid rgba($danger-color, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+
+        p {
+            color: $danger-color;
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            background: $danger-color;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+    }
+
+    .loading-state {
+        text-align: center;
+        color: $text-secondary;
+        padding: 2rem;
+        font-style: italic;
+    }
+
+    .transaction-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: $background-color;
+            border-radius: 10px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba($primary-color, 0.3);
+            border-radius: 10px;
+
+            &:hover {
+                background: rgba($primary-color, 0.5);
+            }
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: $background-color;
+            transition: all 0.2s;
+
+            &:hover {
+                background: darken($background-color, 2%);
+                transform: translateX(4px);
+            }
+
+            &.credit {
+                border-left: 3px solid $secondary-color;
+            }
+
+            &.debit {
+                border-left: 3px solid $danger-color;
+            }
+
+            .tx-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                font-weight: bold;
+            }
+
+            &.credit .tx-icon {
+                background: rgba($secondary-color, 0.1);
+                color: $secondary-color;
+            }
+
+            &.debit .tx-icon {
+                background: rgba($danger-color, 0.1);
+                color: $danger-color;
+            }
+
+            .details {
+                flex: 1;
+                min-width: 0;
+
+                h4 {
+                    font-size: 0.95rem;
+                    margin-bottom: 0.25rem;
+                    font-weight: 600;
+                    color: $text-primary;
+                    text-transform: capitalize;
+                }
+
+                .tx-date {
+                    font-size: 0.75rem;
+                    color: $text-secondary;
+                    display: block;
+                    margin-bottom: 0.125rem;
+                }
+
+                .tx-id {
+                    font-size: 0.7rem;
+                    color: $text-secondary;
+                    font-family: monospace;
+                }
+            }
+
+            .tx-amount-wrapper {
+                text-align: right;
+
+                .amount {
+                    font-weight: 700;
+                    font-size: 1rem;
+                    display: block;
+                    margin-bottom: 0.25rem;
+
+                    &.credit {
+                        color: $secondary-color;
+                    }
+
+                    &.debit {
+                        color: $danger-color;
+                    }
+                }
+
+                .status {
+                    font-size: 0.65rem;
+                    padding: 0.125rem 0.5rem;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+
+                    &.completed, &.success {
+                        background: rgba($secondary-color, 0.1);
+                        color: $secondary-color;
+                    }
+
+                    &.pending {
+                        background: rgba(orange, 0.1);
+                        color: orange;
+                    }
+
+                    &.failed {
+                        background: rgba($danger-color, 0.1);
+                        color: $danger-color;
+                    }
+                }
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: $text-secondary;
+            padding: 3rem 1rem;
+
+            p {
+                margin: 0.5rem 0;
+                font-weight: 500;
+            }
+
+            small {
+                display: block;
+                margin-top: 0.5rem;
+                opacity: 0.7;
+            }
+        }
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
