@@ -178,7 +178,7 @@ const Loan = ({ account, onRefreshAccount }) => {
                             <label>{t('loanAmount')} <span className="required">*</span></label>
                             <input
                                 type="text"
-                                value={loanAmount ? `₫ ${parseFloat(loanAmount).toLocaleString('vi-VN')}` : '₫ 0'}
+                                value={loanAmount ? `₫ ${parseFloat(loanAmount).toLocaleString('vi-VN')}` : ''}
                                 onChange={(e) => {
                                     const value = e.target.value.replace(/[₫\s.]/g, '');
                                     setLoanAmount(value ? parseFloat(value) : '');

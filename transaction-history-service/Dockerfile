@@ -1,9 +1,16 @@
 FROM maven:3.8.3-openjdk-17 AS build
 WORKDIR /app
 
-COPY . .
+# Copy and build bank-common first
+COPY bank-common /app/bank-common
+WORKDIR /app/bank-common
+RUN mvn clean install -DskipTests
 
-RUN mvn clean install -DskipTests -pl transaction-history-service -am
+# Build transaction-history-service
+WORKDIR /app/transaction-history-service
+COPY transaction-history-service/pom.xml .
+COPY transaction-history-service/src ./src
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17.0.8.1_1-jre-ubi9-minimal
 RUN unlink /etc/localtime;ln -s  /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime

@@ -26,8 +26,8 @@
         // LEFT SIDE: BANNER
         .login-banner {
             flex: 1.2; // 60%
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.9) 0%, rgba(6, 182, 212, 0.8) 100%),
-                url('@/assets/login-banner.png'); // Try local first, fallback is handled via CSS if invalid
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.9) 0%, rgba(6, 182, 212, 0.8) 100%);
+                // url('@/assets/login-banner.png'); // Commented out - image file not found
             background-size: cover;
             background-position: center;
             position: relative;

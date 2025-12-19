@@ -205,13 +205,13 @@ const QRCodeScanner = ({ account, onTransfer }) => {
                         <div className="amount-input-wrapper">
                             <span className="currency">₫</span>
                             <input
-                                type="number"
-                                step="1000"
-                                value={amount}
-                                onChange={e => setAmount(e.target.value)}
-                                placeholder="0"
-                                min="1000"
-                                max={account.balance}
+                                type="text"
+                                value={amount ? parseFloat(amount).toLocaleString('vi-VN') : ''}
+                                onChange={e => {
+                                    const value = e.target.value.replace(/\./g, '');
+                                    setAmount(value ? parseFloat(value) : '');
+                                }}
+                                placeholder="10.000.000"
                                 required
                                 disabled={loading}
                             />

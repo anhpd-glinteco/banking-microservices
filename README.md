@@ -1,15 +1,11 @@
 ### How to run project
 ```
-git clone <repo>
-cd <project>
-
-cp .env.example .env
-docker compose up -d 
+1. git clone <repo>
+2. cd <repo>
+3. cp .env.example .env
+4. docker compose up -d 
 ```
 
-```
-mvn clean install -DskipTests
-```
 ```
 bank-common
 1. discovery
