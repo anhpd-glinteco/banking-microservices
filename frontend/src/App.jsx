@@ -186,10 +186,10 @@ function App() {
                 secondary: '#fff',
               },
               style: {
-                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                color: '#065f46',
-                border: '2px solid #10b981',
-                fontWeight: '700',
+                background: '#fff',
+                color: '#1f2937',
+                border: '1px solid #e5e7eb',
+                fontWeight: '600',
               },
             },
             error: {
@@ -211,10 +211,10 @@ function App() {
                 secondary: '#fff',
               },
               style: {
-                background: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)',
-                color: '#3730a3',
-                border: '2px solid #4f46e5',
-                fontWeight: '700',
+                background: '#fff',
+                color: '#1f2937',
+                border: '1px solid #e5e7eb',
+                fontWeight: '600',
               },
             },
           }}

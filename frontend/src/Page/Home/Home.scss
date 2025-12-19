@@ -20,6 +20,7 @@ $bg-gray: #f0f2f5;
             justify-content: center;
             padding: 0 16px;
             border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
 
             .logo-icon {
                 font-weight: 900;
@@ -27,6 +28,7 @@ $bg-gray: #f0f2f5;
                 color: $mb-blue;
                 margin-right: 8px;
                 font-family: 'Arial', sans-serif; // Or custom font
+                transition: margin 0.2s;
             }
 
             .logo-text {
@@ -36,6 +38,23 @@ $bg-gray: #f0f2f5;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                transition: opacity 0.2s;
+            }
+        }
+
+        &.ant-layout-sider-collapsed {
+            .logo-container {
+                padding: 0 8px;
+
+                .logo-icon {
+                    margin-right: 0;
+                }
+
+                .logo-text {
+                    opacity: 0;
+                    width: 0;
+                    overflow: hidden;
+                }
             }
         }
 

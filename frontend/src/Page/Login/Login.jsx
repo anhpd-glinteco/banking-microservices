@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher/LanguageSwitcher';
-import toast from 'react-hot-toast';
+
+import { showNotification } from '@/utils/toast';
 import './Login.scss';
 
 const Login = ({ onLogin }) => {
@@ -14,7 +15,7 @@ const Login = ({ onLogin }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!username.trim() || !password.trim()) {
-            toast.error(t('enterCredentials'));
+            showNotification.error(t('error'), t('enterCredentials'));
             return;
         }
 

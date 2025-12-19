@@ -43,8 +43,8 @@ class WebSocketService {
                     const data = JSON.parse(message.body);
                     console.log('Balance update received:', data);
                     
-                    if (onBalanceUpdate && data.newBalance !== undefined) {
-                        onBalanceUpdate(data.newBalance);
+                    if (onBalanceUpdate && data) {
+                        onBalanceUpdate(data);
                     }
                 } catch (error) {
                     console.error('Error parsing WebSocket message:', error);

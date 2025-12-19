@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchAccount } from '@/services/api';
 import websocketService from '@/services/websocket';
+import { showNotification } from '@/utils/toast';
 import {
     Layout, Menu, Button, Card, Row, Col, Typography,
     Avatar, Dropdown, Space, Progress, List, Tag, Badge, Tabs
@@ -13,7 +14,9 @@ import {
     MoneyCollectOutlined, CalculatorOutlined, SettingOutlined, LogoutOutlined,
     UserOutlined, BellOutlined, QuestionCircleOutlined,
     RightOutlined, MenuUnfoldOutlined, MenuFoldOutlined,
-    SafetyCertificateOutlined, GiftOutlined, FileTextOutlined
+
+    SafetyCertificateOutlined, GiftOutlined, FileTextOutlined,
+    ArrowUpOutlined, ArrowDownOutlined
 } from '@ant-design/icons';
 import Transfer from '@/Page/Transfer/Transfer';
 import History from '@/Page/History/History';
@@ -21,7 +24,6 @@ import QRCodeGenerator from '@/Page/QRCode/QRCodeGenerator';
 import QRCodeScanner from '@/Page/QRCode/QRCodeScanner';
 import Loan from '@/Page/Loan/Loan';
 import LanguageSwitcher from '@/components/LanguageSwitcher/LanguageSwitcher';
-import toast from 'react-hot-toast';
 import './Home.scss';
 
 const { Header, Sider, Content } = Layout;
@@ -56,13 +58,57 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
     useEffect(() => {
         if (!account?.accountNumber) return;
 
-        const handleBalanceUpdate = (newBalance) => {
-            console.log('Balance updated via WebSocket:', newBalance);
+        const handleBalanceUpdate = (data) => {
+            console.log('Balance updated via WebSocket:', data);
+
+            // Handle both object (new format) and simple value (legacy/fallback)
+            const newBalance = typeof data === 'object' ? data.newBalance : data;
+
             setAccount(prev => ({ ...prev, balance: newBalance }));
             if (setParentAccount) {
                 setParentAccount(prev => ({ ...prev, balance: newBalance }));
             }
-            toast.success(t('balanceUpdated'), { duration: 2000, id: 'balance-update' });
+
+            if (typeof data === 'object' && data.transactionAmount) {
+                const isCredit = data.transactionType === 'CREDIT';
+                const amount = data.transactionAmount;
+                const description = data.description || (isCredit ? `Received from ${data.otherPartyName || 'Unknown'}` : `Sent to ${data.otherPartyName || 'Unknown'}`);
+
+                toast((t) => (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                            background: isCredit ? '#f6ffed' : '#fff1f0',
+                            padding: '8px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            {isCredit ?
+                                <ArrowUpOutlined style={{ color: '#52c41a', fontSize: '20px' }} /> :
+                                <ArrowDownOutlined style={{ color: '#ff4d4f', fontSize: '20px' }} />
+                            }
+                        </div>
+                        <div>
+                            <div style={{ fontWeight: 600, fontSize: '15px' }}>
+                                {t('balanceUpdated')}
+                            </div>
+                            <div style={{
+                                color: isCredit ? '#52c41a' : '#ff4d4f',
+                                fontWeight: 'bold',
+                                fontSize: '14px'
+                            }}>
+                                {isCredit ? '+' : '-'}{amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                                {description}
+                            </div>
+                        </div>
+                    </div>
+                ), { duration: 4000, id: 'balance-update' });
+            } else {
+                toast.success(t('balanceUpdated'), { duration: 2000, id: 'balance-update' });
+            }
         };
 
         websocketService.connect(account.accountNumber, handleBalanceUpdate);
@@ -80,9 +126,9 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
             const data = await fetchAccount(account.id);
             setAccount(data);
             if (setParentAccount) setParentAccount(data);
-            toast.success(t('balanceUpdated'));
+            showNotification.success(t('balanceUpdated'));
         } catch (e) {
-            toast.error(t('failedRefresh'));
+            showNotification.error(t('failedRefresh'));
         } finally {
             setRefreshing(false);
         }
@@ -200,7 +246,7 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
                 </Card>
 
                 <div style={{ marginTop: '24px' }}>
-                    <History accountId={account.id} accountNumber={account.accountNumber} />
+                    <History accountId={account.id} accountNumber={account.accountNumber} isDashboard={true} />
                 </div>
             </Col>
 
@@ -268,9 +314,9 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
 
     return (
         <Layout className="home-layout-antd">
-            <Sider trigger={null} collapsible collapsed={collapsed} theme="light" className="custom-sider" width={260}>
+            <Sider trigger={null} collapsible collapsed={collapsed} theme="light" className="custom-sider" width={300}>
                 <div className="logo-container">
-                    <div className="logo-icon">MB</div>
+                    <div className="logo-icon">ABCBANK</div>
                     {!collapsed && <span className="logo-text">Internet Banking</span>}
                 </div>
                 <Menu

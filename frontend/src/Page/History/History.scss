@@ -77,27 +77,6 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
-        max-height: 500px;
-        overflow-y: auto;
-        padding-right: 0.5rem;
-
-        &::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        &::-webkit-scrollbar-track {
-            background: $background-color;
-            border-radius: 10px;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            background: rgba($primary-color, 0.3);
-            border-radius: 10px;
-
-            &:hover {
-                background: rgba($primary-color, 0.5);
-            }
-        }
 
         .transaction-item {
             display: flex;
@@ -105,133 +84,115 @@
             gap: 1rem;
             padding: 1rem;
             border-radius: 12px;
-            background: $background-color;
+            background: #f8f9fa;
+            /* Slightly gray background to stand out */
+            border: 1px solid #e8e8e8;
             transition: all 0.2s;
 
             &:hover {
-                background: darken($background-color, 2%);
+                background: #f0f2f5;
                 transform: translateX(4px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             }
 
             &.credit {
-                border-left: 3px solid $secondary-color;
+                border-left: 4px solid #52c41a;
             }
 
             &.debit {
-                border-left: 3px solid $danger-color;
+                border-left: 4px solid #ff4d4f;
             }
 
-            .tx-icon {
-                width: 36px;
-                height: 36px;
+            .tx-icon-wrapper {
+                width: 40px;
+                height: 40px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 1.2rem;
-                font-weight: bold;
-            }
+                flex-shrink: 0;
 
-            &.credit .tx-icon {
-                background: rgba($secondary-color, 0.1);
-                color: $secondary-color;
-            }
+                &.credit {
+                    background: rgba(82, 196, 26, 0.1);
+                    color: #52c41a;
+                }
 
-            &.debit .tx-icon {
-                background: rgba($danger-color, 0.1);
-                color: $danger-color;
+                &.debit {
+                    background: rgba(255, 77, 79, 0.1);
+                    color: #ff4d4f;
+                }
             }
 
             .details {
                 flex: 1;
                 min-width: 0;
 
-                h4 {
+                h4.tx-title {
                     font-size: 0.95rem;
-                    margin-bottom: 0.25rem;
+                    margin: 0 0 0.25rem 0;
                     font-weight: 600;
-                    color: $text-primary;
-                    text-transform: capitalize;
+                    color: #262626;
                 }
 
-                .tx-date {
-                    font-size: 0.75rem;
-                    color: $text-secondary;
-                    display: block;
-                    margin-bottom: 0.125rem;
-                }
+                .tx-meta {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
 
-                .tx-id {
-                    font-size: 0.7rem;
-                    color: $text-secondary;
-                    font-family: monospace;
+                    .tx-date {
+                        font-size: 0.75rem;
+                        color: #8c8c8c;
+                    }
+
+                    .tx-id {
+                        font-size: 0.7rem;
+                        color: #8c8c8c;
+                        font-family: monospace;
+                        background: rgba(0, 0, 0, 0.05);
+                        padding: 0 4px;
+                        border-radius: 4px;
+                    }
                 }
             }
 
             .tx-amount-wrapper {
                 text-align: right;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 4px;
 
                 .amount {
                     font-weight: 700;
                     font-size: 1rem;
-                    display: block;
-                    margin-bottom: 0.25rem;
 
                     &.credit {
-                        color: $secondary-color;
+                        color: #52c41a;
                     }
 
                     &.debit {
-                        color: $danger-color;
-                    }
-                }
-
-                .status {
-                    font-size: 0.65rem;
-                    padding: 0.125rem 0.5rem;
-                    border-radius: 12px;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-
-                    &.completed, &.success {
-                        background: rgba($secondary-color, 0.1);
-                        color: $secondary-color;
-                    }
-
-                    &.pending {
-                        background: rgba(orange, 0.1);
-                        color: orange;
-                    }
-
-                    &.failed {
-                        background: rgba($danger-color, 0.1);
-                        color: $danger-color;
+                        color: #ff4d4f;
                     }
                 }
             }
         }
+    }
 
-        .empty-state {
-            text-align: center;
-            color: $text-secondary;
-            padding: 3rem 1rem;
-
-            p {
-                margin: 0.5rem 0;
-                font-weight: 500;
-            }
-
-            small {
-                display: block;
-                margin-top: 0.5rem;
-                opacity: 0.7;
-            }
-        }
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
     }
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }

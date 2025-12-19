@@ -21,10 +21,15 @@ const Loan = ({ account, onRefreshAccount }) => {
     const [repaymentAmount, setRepaymentAmount] = useState('');
 
     useEffect(() => {
+        // Load loans on mount to check limit
+        loadLoans();
+    }, [account.id]);
+
+    useEffect(() => {
         if (activeView === 'myLoans') {
             loadLoans();
         }
-    }, [activeView, account.id]);
+    }, [activeView]);
 
     const loadLoans = async () => {
         setLoading(true);
@@ -41,6 +46,16 @@ const Loan = ({ account, onRefreshAccount }) => {
 
     const handleApplyLoan = async (e) => {
         e.preventDefault();
+
+        // Check maximum 3 loans limit
+        const activeLoans = loans.filter(loan => 
+            loan.status === 'ACTIVE' || loan.status === 'APPROVED' || loan.status === 'PENDING'
+        );
+        
+        if (activeLoans.length >= 3) {
+            toast.error(t('maximumLoansReached'));
+            return;
+        }
 
         if (!loanAmount || parseFloat(loanAmount) < 10000000) {
             toast.error(t('minimumLoanAmount'));
@@ -83,8 +98,12 @@ const Loan = ({ account, onRefreshAccount }) => {
             setActiveView('myLoans');
             loadLoans();
         } catch (error) {
-            const errorMsg = error.response?.data?.error || t('loanApplicationFailed');
-            toast.error(errorMsg, { id: toastId });
+            // Check for specific error types
+            if (error.response?.status === 400) {
+                toast.error(t('maximumLoansReached'), { id: toastId });
+            } else {
+                toast.error(t('loanApplicationFailed'), { id: toastId });
+            }
         } finally {
             setLoading(false);
         }
@@ -157,22 +176,16 @@ const Loan = ({ account, onRefreshAccount }) => {
                     <form onSubmit={handleApplyLoan}>
                         <div className="input-group">
                             <label>{t('loanAmount')} <span className="required">*</span></label>
-                            <div className="amount-input-wrapper">
-                                <span className="currency">₫</span>
-                                <InputNumber
-                                    style={{ width: '100%', padding: '4px 0', border: 'none', boxShadow: 'none' }}
-                                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-                                    parser={value => value.replace(/\./g, '')}
-                                    step={1000000}
-                                    value={loanAmount}
-                                    onChange={(value) => setLoanAmount(value)}
-                                    placeholder="10.000.000"
-                                    min={10000000}
-                                    max={10000000000}
-                                    controls={false}
-                                    stringMode={false}
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                value={loanAmount ? `₫ ${parseFloat(loanAmount).toLocaleString('vi-VN')}` : '₫ 0'}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/[₫\s.]/g, '');
+                                    setLoanAmount(value ? parseFloat(value) : '');
+                                }}
+                                placeholder="₫ 10.000.000"
+                                disabled={loading}
+                            />
                             <small className="helper-text">{t('loanAmountRange')}</small>
                         </div>
 
@@ -288,13 +301,13 @@ const Loan = ({ account, onRefreshAccount }) => {
                                                 <form onSubmit={handleRepayment} className="repayment-form">
                                                     <div className="input-group-inline">
                                                         <input
-                                                            type="number"
-                                                            step="1000"
-                                                            value={repaymentAmount}
-                                                            onChange={(e) => setRepaymentAmount(e.target.value)}
-                                                            placeholder={t('enterAmount')}
-                                                            min="1000"
-                                                            max={loan.remainingAmount}
+                                                            type="text"
+                                                            value={repaymentAmount ? parseFloat(repaymentAmount).toLocaleString('vi-VN') : ''}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value.replace(/\./g, '');
+                                                                setRepaymentAmount(value ? parseFloat(value) : '');
+                                                            }}
+                                                            placeholder="100.000.000"
                                                             required
                                                             disabled={loading}
                                                         />

@@ -163,9 +163,6 @@ const QRCodeScanner = ({ account, onTransfer }) => {
                             style={{ display: 'none' }}
                         />
                     </label>
-                    <button className="btn-secondary" onClick={handleManualInput}>
-                        ⌨️ {t('manualEntry')}
-                    </button>
                 </div>
             )}
 
