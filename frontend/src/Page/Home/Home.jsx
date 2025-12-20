@@ -314,9 +314,9 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
 
     return (
         <Layout className="home-layout-antd">
-            <Sider trigger={null} collapsible collapsed={collapsed} theme="light" className="custom-sider" width={300}>
+            <Sider trigger={null} collapsible collapsed={collapsed} theme="light" className="custom-sider" width={260}>
                 <div className="logo-container">
-                    <div className="logo-icon">ABCBANK</div>
+                    <div className="logo-icon">MB</div>
                     {!collapsed && <span className="logo-text">Internet Banking</span>}
                 </div>
                 <Menu
