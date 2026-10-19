@@ -2,10 +2,9 @@
 
 ## Trạng thái hiện tại
 
-- T01–T04 và T06 DONE. WSL bank-th4 đã khởi động lại được; Docker/MySQL/Kafka/Redis kiểm tra trực tiếp đạt. T05/T07 đã nghiệm thu; T08 đang triển khai kiểm chứng E2E và tài liệu.
-- Chế độ: coordinator tự điều phối full DAG, chạy tiếp qua các task; không cần user gọi từng task.
-- Task hiện tại: **T08** full integration và tài liệu nộp.
-- Chọn wave theo quy tắc trong [AGENTS.md](../AGENTS.md) và phụ thuộc ở [plan](TH4-plan.md).
+- **T01–T08 DONE** trên branch `codex/th4-integration`, worktree `D:\Codex\work\bank-th4-codex-th4-integration`.
+- Hoàn tất gate local Java17/Node22, MySQL integration và REST/SQL/Kafka E2E sau tích hợp. Remote CI chưa chạy; không push/deploy/merge main.
+- Không còn task tiếp theo trong DAG TH4. Giữ nguyên fixture/volume và thay đổi người dùng trong D:\bank.
 
 | ID | Trạng thái | Kết quả hoặc điều kiện tiếp tục |
 | --- | --- | --- |
@@ -16,15 +15,17 @@
 | T05 | DONE | CRUD profile; unit/web11 + MySQL IT2, 0 failure/error/skip trên branch tích hợp; SQL filter/LIMIT/OFFSET và FK/no-cascade đạt |
 | T06 | DONE | History verify 8/8; MySQL/API/Kafka fixture smoke, backfill và caller frontend đã đối chiếu |
 | T07 | DONE | MySQL IT8 + unit11,0failure/error/skip sau tích hợp; rollback sau SQL flush giữ nguyên cả5 trường snapshot |
-| T08 | IN_PROGRESS | T05/T06/T07 DONE; dựng stack test độc lập, E2E, CI MySQL và tài liệu10 mục |
+| T08 | DONE | Full verify11 lệnh exit0; unit/web46 + MySQL IT8,0failure/error/skip; E2E sau tích hợp41 checks PASS, docs10 mục và CI MySQL đã kiểm local |
 
 ## Bàn giao gần nhất
 
-- Ngày 2026-10-19 (Asia/Saigon), branch codex/th4-integration. T01–T07 DONE, T08 IN_PROGRESS; không push/deploy/merge main. Runtime WSL bank-th4/Docker hoạt động; giữ phiên WSL mở trong kiểm thử. Fixture cũ và dữ liệu/SMTP D:\bank không đổi.
-- T05 nguồn4095c4e/tích hợp77bc9dd: profile CRUD, SQL filter/pagination, FK/no-cascade; coordinator review toàn diff và chạy common install + Account mysql-it, exit0, unit11+IT2,0failure/error/skip. Logs/summary T05-integrated-* tại D:\Codex\outputs\bank-th4. Testcontainers test-only1.21.4 sửa tương thích Docker29, quyết định ghi T05/T07.
-- T07 nguồna07dc53/tích hợpfea66dd: chỉ LoanTransactionIT + task doc, không sửa production. Coordinator đọc toàn diff; injected proxy, REQUIRES_NEW snapshots, flush + JDBC chứng minh balance đổi trước exception, rồi rollback5field về snapshot. Unit/default task11 PASS; profile task11+8 PASS. Sau tích hợp Account -Pmysql-it verify exit0, unit11+IT8,0failure/error/skip; T07-integrated-verify.log/T07-integrated-summary.json. Lần đầu fail vì Spring dịch IllegalStateException của test; dùng FixtureFailure riêng, không nới assertion.
-- T08 tiếp theo: worktree riêng, compose/project bank-th4-test; không dừng stack cũ chiếm13306/39092/16379. Cho phép override host ports, lần chạy này dùng23306/49092/26379, app18081/18082/18084; defaults vẫn theo contract. Dùng fixture/credential giả, giữ volume, không SMTP.
-- Cần hoàn tất T08 E2E API/SQL/Kafka +400/404/503, full7lệnh Maven và frontend, CI MySQL syntax/local check, docs10mục + artifact đã lọc secret. CI remote chưa chạy; không tuyên bố PASS. Giới hạn còn: chưa authn/authz, DB-event không atomic, baseline frontend advisory chưa nâng dependency.
+- Ngày 2026-10-20 (Asia/Saigon). T01–T08 DONE; branch codex/th4-integration, worktree D:\Codex\work\bank-th4-codex-th4-integration. T05 tích hợp77bc9dd, T07 fea66dd, T08 nguồn7d61b47/tích hợp956c4bd. Không push/deploy/merge main; D:\bank giữ nguyên thay đổi source/SMTP của người dùng.
+- Runtime WSL bank-th4/Docker29.9.1 hoạt động; không cần admin/cài lại. Bổ sung Testcontainers test-only1.21.4 cho Docker29. Môi trường/tool/cache trên D; dữ liệu thật/SMTP không dùng, không reset/delete volume. Stack cũ13306/39092/16379 giữ nguyên; test riêng23306/49092/26379 + API18081/18082/18084, loopback, credentials giả ngoài git.
+- Full verify final backend/frontend source: 11 lệnh exit0 (common install +6 service verify +Account mysql-it +frontend ci/lint/build). Unit/web Account11/Transfer27/History8 và MySQL IT8,0failure/error/skipped; module không test chỉ build-only. Coordinator đối chiếu XML, source không đổi và SHA256 cả3 jar. Báo cáo D:\Codex\outputs\bank-th4\T08-20261019\build\build-summary.json và coordinator-build-check.json cùng task folder.
+- Sau tích hợp ngày20: actionlint exit0; self-check5 parser/6 case env/config exit0; E2E exit0,41 checks,5 Compose actions exit0. REST PROCESSING→Kafka SUCCESS; SQL cuối sau restart Account: Alice59999000.00/Bob1001000.00, History3 event/owner;400/404/503 giữ transaction count1. Owner đọc5 bảng,12 SELECT/UPDATE chéo bị từ chối,0FK xuyên DB. Bằng chứng an toàn D:\Codex\outputs\bank-th4\T08-20261020-integrated\coordinator-summary.json và e2e\{e2e-summary.json,safe-sql.txt,schema-metadata.txt,compose-commands.json}.
+- T02 retained bank/bank_restore khớp manifest5 bảng bằng kiểm tra chỉ đọc; T07 chứng minh flush SQL rồi rollback5 trường bằng transaction độc lập. T08 docs/data-and-service-design.md đủ10 mục,47 entity fields, diagram và lệnh tái lập; CI MySQL job có gate executed tests/zero failure/error/skip, remote CI NOT RUN. Các lần setup lỗi được giữ với exit1, không tính PASS.
+- Rủi ro/NOT RUN: chưa UI browser/remote CI; lint6 hook warnings, Sass/bundle warnings; npm ci báo25 advisory (1 critical), chưa upgrade dependency. Baseline auth/plaintext và DB-event không atomic; unsupported media có thể500, JSON đúng content-type đã kiểm400. Không coi đây là chứng nhận production.
+- Bước tiếp theo: không còn task TH4; giữ artifacts/volumes để review. Muốn chạy lại dùng scripts/th4-init.ps1 tạo env/volume identity mới rồi th4-e2e.ps1; không dùng down -v. Chỉ xử lý main/push/deploy khi người dùng chỉ định riêng.
 
 ## Mẫu bàn giao thay thế mục trên
 

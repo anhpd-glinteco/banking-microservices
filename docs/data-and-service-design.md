@@ -104,7 +104,7 @@ SQL gate thử SELECT bảng mình và SELECT/UPDATE cả hai schema khác cho t
 | GET /api/history/number/{number} | list HistoryLog chỉ owner number; unknown number→[] | 200 |
 | GET /api/history/{numericId} | resolve Account REST rồi query number | 200/400/404/503 |
 
-ErrorResponse chung là `{timestamp,status,error,message,path}`. Validation400 chỉ nêu field/quy tắc, không rejectedValue; resource404 dùng “Requested resource was not found”; dependency503 dùng “Account service unavailable”. Không xuất stack trace/SQL/secret vào response.
+Request body JSON phải gửi `Content-Type: application/json`. ErrorResponse chung là `{timestamp,status,error,message,path}`. Validation400 chỉ nêu field/quy tắc, không rejectedValue; resource404 dùng “Requested resource was not found”; dependency503 dùng “Account service unavailable”. Không xuất stack trace/SQL/secret vào response.
 
 Các API nền giữ nguyên: Account POST /login{username,password}→AccountDTO; /otp/generate?email; /users/register-with-otp (RegisterRequest→User); /forgot-password?email; /reset-password?email&otp&newPassword; GET /check-exists?email&phone&identificationNumber→map boolean. Chúng không thuộc CRUD profile TH4; endpoint register-with-otp còn trả entity User là rủi ro baseline ở mục10. Không có API generic sửa số dư/status hay cascade xóa dữ liệu tài chính.
 
@@ -202,7 +202,7 @@ erDiagram
 
 ## 9. Nghiệp vụ end-to-end và cách tái lập
 
-Chạy trong WSL `bank-th4` (Docker unix socket), không expose Docker TCP. Các đường dẫn `/mnt/d/...` tương ứng ổ D. Build runner chạy common install, verify sáu module, Account mysql-it rồi npm ci/lint/build; fail-fast và giữ exit/test counts. Dockerfile test chỉ copy jar đã verify, không build bằng skip-tests.
+Chạy trong WSL `bank-th4` (Docker unix socket), không expose Docker TCP. Khi dùng stack thủ công, mở `wsl -d bank-th4` và giữ terminal WSL đó trong lúc sử dụng. Các đường dẫn `/mnt/d/...` tương ứng ổ D. Build runner chạy common install, verify sáu module, Account mysql-it rồi npm ci/lint/build; fail-fast và giữ exit/test counts. Dockerfile test chỉ copy jar đã verify, không build bằng skip-tests.
 
 ```powershell
 # Từ repo root trong WSL/pwsh; dùng OutputDirectory mới cho mỗi lượt.
@@ -218,7 +218,7 @@ Seed API tạo th4_alice/th4_bob/th4_empty, email example.invalid, lấy ID từ
 
 Dừng riêng fixture: `docker compose --env-file <env> -p bank-th4-test -f compose.th4-test.yml down` **không -v**. Không unregister WSL/reset DB/dọn volume; cleanup volume cần ủy quyền riêng.
 
-Bằng chứng lượt này: [build summary](D:/Codex/outputs/bank-th4/T08-20261019/build/build-summary.json), [E2E summary](D:/Codex/outputs/bank-th4/T08-20261019/e2e-r5/e2e-summary.json), [safe SQL](D:/Codex/outputs/bank-th4/T08-20261019/e2e-r5/safe-sql.txt), [schema metadata](D:/Codex/outputs/bank-th4/T08-20261019/e2e-r5/schema-metadata.txt). Pagination SQL và MySQL rollback: [T05/T07 contracts](tasks/T07-transactions.md), [T07 Failsafe](D:/Codex/outputs/bank-th4/T07-reports). Kết quả final source: cả11 lệnh runner exit0. Account11, Transfer27, History8 unit/web tests; Account mysql-it có8 IT (Loan6 + User2), mọi suite0failure/error/skipped. Common/Notification/Gateway/Discovery không có test, chỉ build-only. Frontend npm ci/lint/build pass; build còn cảnh báo bundle lớn baseline, không đổi scope để tối ưu bundle. [Snapshot XML](D:/Codex/outputs/bank-th4/T08-20261019/build/reports) giữ testcase thực, gồm hai case parameterized readTimeoutIsSafe503. [Các kiểm tra cấu hình](D:/Codex/outputs/bank-th4/T08-20261019/validation-checks.json) ghi actionlint, parser/env safety và Compose config.
+Bằng chứng lượt này: [build summary](D:/Codex/outputs/bank-th4/T08-20261019/build/build-summary.json), [E2E summary](D:/Codex/outputs/bank-th4/T08-20261020-integrated/e2e/e2e-summary.json), [safe SQL](D:/Codex/outputs/bank-th4/T08-20261020-integrated/e2e/safe-sql.txt), [schema metadata](D:/Codex/outputs/bank-th4/T08-20261020-integrated/e2e/schema-metadata.txt). Pagination SQL và MySQL rollback: [T05 pagination](tasks/T05-crud-pagination.md) và [T07 rollback](tasks/T07-transactions.md), [T07 Failsafe](D:/Codex/outputs/bank-th4/T07-reports). Kết quả final source: cả11 lệnh runner exit0. Account11, Transfer27, History8 unit/web tests; Account mysql-it có8 IT (Loan6 + User2), mọi suite0failure/error/skipped. Common/Notification/Gateway/Discovery không có test, chỉ build-only. Frontend npm ci/lint/build pass; build còn cảnh báo bundle lớn baseline, không đổi scope để tối ưu bundle. [Snapshot XML](D:/Codex/outputs/bank-th4/T08-20261019/build/reports) giữ testcase thực, gồm hai case parameterized readTimeoutIsSafe503. [Các kiểm tra cấu hình](D:/Codex/outputs/bank-th4/T08-20261019/validation-checks.json) ghi actionlint, parser/env safety và Compose config.
 
 ## 10. Tình huống lỗi, kiểm tra và giới hạn
 
@@ -237,3 +237,7 @@ Bằng chứng lượt này: [build summary](D:/Codex/outputs/bank-th4/T08-20261
 CI giữ matrix unit/web/build hiện có, thêm Ubuntu Docker MySQL integration; Failsafe phải có >0test và0failure/error/skipped, upload reports, không tự cập nhật progress. Kafka E2E chạy riêng theo mục9, chưa nằm trong CI. Remote GitHub CI **NOT RUN** vì không push.
 
 Giới hạn baseline: API hiện chưa có authentication/authorization đủ cho ngân hàng; plaintext password lưu trong entity và một số endpoint auth/OTP cũ có nguy cơ lộ dữ liệu. Fixture chỉ loopback/dữ liệu giả, không phải chứng nhận an toàn production. Generic CRUD TH4 đã loại password khỏi response, không có sửa số dư/status/xóa account. Transaction Loan chỉ atomic trong Account DB; Kafka producer/saga catch Exception và DB-event không atomic, có cửa sổ race/retry/duplicate; chưa có outbox hay exactly-once guarantee. Không mở rộng security framework/outbox trong TH4.
+
+Frontend npm ci trong lượt kiểm chứng báo 25 advisory (1 low/4 moderate/19 high/1 critical); chưa nâng dependency ngoài phạm vi. Request unsupported media type ở baseline có thể bị generic handler trả 500; gate 400 ở đây kiểm JSON đúng content-type. Chưa kiểm UI bằng browser và chưa chạy CI remote.
+
+Gate sau tích hợp ngày 2026-10-20: E2E exit 0, 41 checks và 5 Compose actions đều exit 0; SQL cuối sau restart Account vẫn đúng số dư và 3 event lịch sử. [Coordinator summary](D:/Codex/outputs/bank-th4/T08-20261020-integrated/coordinator-summary.json). Ba jar khớp SHA256 với bản đã verify; backend/frontend source không đổi từ full verify.
