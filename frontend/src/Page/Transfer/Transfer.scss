@@ -1,0 +1,256 @@
+@import '../../styles/global.scss';
+
+.transfer-container {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    height: 100%;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.transfer-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+
+    .card-header {
+        margin-bottom: 1.5rem;
+
+        h3 {
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        p {
+            color: $text-secondary;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .input-group {
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: $text-primary;
+
+            .required {
+                color: $danger-color;
+                margin-left: 2px;
+            }
+        }
+
+        input {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid $border-color;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+
+            &:focus {
+                border-color: $primary-color;
+                box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+                outline: none;
+            }
+
+            &:disabled {
+                background: $background-color;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            &::placeholder {
+                color: lighten($text-secondary, 10%);
+            }
+        }
+
+        .amount-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            .currency {
+                position: absolute;
+                left: 0.875rem;
+                font-weight: 600;
+                color: $text-secondary;
+                font-size: 1rem;
+            }
+
+            input {
+                padding-left: 2rem;
+                font-weight: 600;
+                font-size: 1.1rem;
+            }
+        }
+
+        .helper-text {
+            display: block;
+            margin-top: 0.375rem;
+            font-size: 0.75rem;
+            color: $text-secondary;
+        }
+    }
+
+    .submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+
+        &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba($primary-color, 0.4);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        &:disabled {
+            background: linear-gradient(135deg, lighten($text-secondary, 20%) 0%, $text-secondary 100%);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    }
+}
+
+.recent-recipients-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+
+    .card-header {
+        margin-bottom: 1rem;
+
+        h3 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        p {
+            color: $text-secondary;
+            font-size: 0.8rem;
+            margin: 0.25rem 0 0 0;
+        }
+    }
+
+    .recipients-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .recipient-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border: 2px solid $border-color;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+            border-color: $primary-color;
+            background: rgba($primary-color, 0.02);
+            transform: translateX(4px);
+        }
+
+        &.active {
+            border-color: $primary-color;
+            background: rgba($primary-color, 0.05);
+        }
+
+        .recipient-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, $primary-color, darken($primary-color, 10%));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .recipient-info {
+            flex: 1;
+            min-width: 0;
+
+            .recipient-name {
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: $text-primary;
+                margin-bottom: 0.125rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .recipient-account {
+                font-size: 0.75rem;
+                color: $text-secondary;
+                font-family: 'Courier New', monospace;
+            }
+        }
+
+        .recipient-arrow {
+            font-size: 1.5rem;
+            color: $text-secondary;
+            flex-shrink: 0;
+        }
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

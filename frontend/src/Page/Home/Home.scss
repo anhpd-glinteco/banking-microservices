@@ -1,0 +1,238 @@
+@import '../../styles/global.scss';
+
+// MB Bank Color Palette
+$mb-blue: #111d5e;
+$mb-blue-light: #e6f7ff;
+$mb-red: #ed1c24;
+$bg-gray: #f0f2f5;
+
+.home-layout-antd {
+    min-height: 100vh;
+
+    .custom-sider {
+        box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
+        z-index: 10;
+
+        .logo-container {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+
+            .logo-icon {
+                font-weight: 900;
+                font-size: 24px;
+                color: $mb-blue;
+                margin-right: 8px;
+                font-family: 'Arial', sans-serif; // Or custom font
+                transition: margin 0.2s;
+            }
+
+            .logo-text {
+                font-weight: 600;
+                font-size: 16px;
+                color: #333;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                transition: opacity 0.2s;
+            }
+        }
+
+        &.ant-layout-sider-collapsed {
+            .logo-container {
+                padding: 0 8px;
+
+                .logo-icon {
+                    margin-right: 0;
+                }
+
+                .logo-text {
+                    opacity: 0;
+                    width: 0;
+                    overflow: hidden;
+                }
+            }
+        }
+
+        .custom-menu {
+            border-right: none;
+            padding-top: 16px;
+
+            .ant-menu-item {
+                margin: 4px 8px;
+                width: calc(100% - 16px);
+                border-radius: 8px;
+                color: #555;
+                font-weight: 500;
+
+                &.ant-menu-item-selected {
+                    background-color: $mb-blue-light;
+                    color: $mb-blue;
+                    font-weight: 600;
+
+                    &::after {
+                        border-right: 3px solid $mb-blue;
+                    }
+                }
+
+                &:hover {
+                    color: $mb-blue;
+                }
+            }
+        }
+    }
+
+    .site-layout {
+        background: $bg-gray;
+
+        .site-layout-header {
+            background: #fff;
+            padding: 0 24px;
+            box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 9;
+            height: 64px;
+            line-height: normal; // Reset Antd line-height
+
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+
+                .trigger {
+                    font-size: 18px;
+                    cursor: pointer;
+                    transition: color 0.3s;
+
+                    &:hover {
+                        color: $mb-blue;
+                    }
+                }
+
+                .user-greeting {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+
+                    > div {
+                        display: flex;
+                        flex-direction: column;
+                        line-height: 1.2;
+                    }
+                }
+            }
+
+            .header-right {
+                .user-profile-trigger {
+                    display: flex;
+                    align-items: center;
+                    cursor: pointer;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    transition: background 0.3s;
+
+                    &:hover {
+                        background: rgba(0, 0, 0, 0.025);
+                    }
+                }
+            }
+        }
+
+        .site-layout-content {
+            margin: 24px;
+            min-height: 280px;
+
+            .content-wrapper {
+                background: #fff;
+                padding: 24px;
+                border-radius: 8px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            }
+
+            .main-card {
+                border-radius: 12px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+
+                .ant-card-head {
+                    border-bottom: 1px solid #f0f0f0;
+                    min-height: 56px;
+                }
+
+                .asset-chart-container {
+                    margin-bottom: 16px;
+                    position: relative;
+                }
+
+                .account-list-item {
+                    padding: 16px;
+                    border-radius: 8px;
+                    margin-bottom: 12px;
+                    border: 1px solid #f0f0f0;
+                    cursor: pointer;
+                    transition: all 0.3s;
+
+                    &:hover {
+                        border-color: $mb-blue;
+                        background: $mb-blue-light;
+                    }
+
+                    .ant-list-item-meta-title {
+                        font-weight: 500;
+                        margin-bottom: 4px;
+                    }
+
+                    .ant-list-item-meta-description {
+                        font-weight: 600;
+                        color: #1f1f1f;
+                    }
+                }
+            }
+
+            .tools-card,
+            .promo-card {
+                border-radius: 12px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            }
+
+            .promo-banner {
+                text-align: center;
+                padding: 10px;
+                background: linear-gradient(135deg, #fff1f0 0%, #fff 100%);
+                border-radius: 8px;
+                border: 1px dashed #ffa39e;
+            }
+        }
+    }
+}
+
+// Global overrides for consistency
+.ant-btn-primary {
+    background-color: $mb-blue;
+    border-color: $mb-blue;
+
+    &:hover {
+        background-color: lighten($mb-blue, 10%);
+        border-color: lighten($mb-blue, 10%);
+    }
+}
+
+// Hide scrollbar for cleaner look
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}

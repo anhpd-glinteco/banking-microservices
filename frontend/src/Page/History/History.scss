@@ -1,0 +1,198 @@
+@import '../../styles/global.scss';
+
+.history-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    height: 100%;
+
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+
+        h3 {
+            margin: 0;
+        }
+
+        .refresh-btn-small {
+            background: rgba($primary-color, 0.1);
+            color: $primary-color;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+
+            &:hover:not(:disabled) {
+                background: rgba($primary-color, 0.2);
+                transform: rotate(180deg);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                animation: spin 1s linear infinite;
+            }
+        }
+    }
+
+    .error-message {
+        background: rgba($danger-color, 0.1);
+        border: 1px solid rgba($danger-color, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+
+        p {
+            color: $danger-color;
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            background: $danger-color;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+    }
+
+    .loading-state {
+        text-align: center;
+        color: $text-secondary;
+        padding: 2rem;
+        font-style: italic;
+    }
+
+    .transaction-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: #f8f9fa;
+            /* Slightly gray background to stand out */
+            border: 1px solid #e8e8e8;
+            transition: all 0.2s;
+
+            &:hover {
+                background: #f0f2f5;
+                transform: translateX(4px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            }
+
+            &.credit {
+                border-left: 4px solid #52c41a;
+            }
+
+            &.debit {
+                border-left: 4px solid #ff4d4f;
+            }
+
+            .tx-icon-wrapper {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+
+                &.credit {
+                    background: rgba(82, 196, 26, 0.1);
+                    color: #52c41a;
+                }
+
+                &.debit {
+                    background: rgba(255, 77, 79, 0.1);
+                    color: #ff4d4f;
+                }
+            }
+
+            .details {
+                flex: 1;
+                min-width: 0;
+
+                h4.tx-title {
+                    font-size: 0.95rem;
+                    margin: 0 0 0.25rem 0;
+                    font-weight: 600;
+                    color: #262626;
+                }
+
+                .tx-meta {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+
+                    .tx-date {
+                        font-size: 0.75rem;
+                        color: #8c8c8c;
+                    }
+
+                    .tx-id {
+                        font-size: 0.7rem;
+                        color: #8c8c8c;
+                        font-family: monospace;
+                        background: rgba(0, 0, 0, 0.05);
+                        padding: 0 4px;
+                        border-radius: 4px;
+                    }
+                }
+            }
+
+            .tx-amount-wrapper {
+                text-align: right;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 4px;
+
+                .amount {
+                    font-weight: 700;
+                    font-size: 1rem;
+
+                    &.credit {
+                        color: #52c41a;
+                    }
+
+                    &.debit {
+                        color: #ff4d4f;
+                    }
+                }
+            }
+        }
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

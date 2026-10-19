@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      - zookeeper
+      - redis
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank
+      MYSQL_USER: bank
+      MYSQL_PASSWORD: bank
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+  discovery-service:
+    build: ./discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+
+  account-service:
+    build: ./account-service
+    depends_on:
+      - discovery-service
+      - mysql
+      - kafka
+      - redis
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bank
+      - SPRING_DATASOURCE_USERNAME=bank
+      - SPRING_DATASOURCE_PASSWORD=bank
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+
+  transfer-service:
+    build: ./transfer-service
+    depends_on:
+      - discovery-service
+      - mysql
+      - kafka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bank
+      - SPRING_DATASOURCE_USERNAME=bank
+      - SPRING_DATASOURCE_PASSWORD=bank
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+
+  notification-service:
+    build: ./notification-service
+    depends_on:
+      - discovery-service
+      - kafka
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+
+  transaction-history-service:
+    build: ./transaction-history-service
+    depends_on:
+      - discovery-service
+      - mysql
+      - kafka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bank
+      - SPRING_DATASOURCE_USERNAME=bank
+      - SPRING_DATASOURCE_PASSWORD=bank
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+
+  frontend:
+    build: 
+         context: ./frontend
+         dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+       - VITE_API_URL=http://localhost:8080

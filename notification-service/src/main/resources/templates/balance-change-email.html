@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Thông Báo Biến Động Số Dư</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f6f9fc;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #111d5e 0%, #0e4d92 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header .subtitle {
+            margin-top: 8px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+            color: #334155;
+            line-height: 1.8;
+        }
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .transaction-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #0ea5e9;
+            border-radius: 6px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .transaction-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #bae6fd;
+        }
+        .transaction-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .value {
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: right;
+        }
+        .balance-highlight {
+            background-color: #dbeafe;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+        }
+        .balance-label {
+            color: #475569;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #111d5e;
+        }
+        .warning-box {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 30px;
+        }
+        .warning-box p {
+            margin: 0;
+            color: #991b1b;
+            font-size: 14px;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer-links {
+            margin: 15px 0;
+        }
+        .footer-links a {
+            color: #0ea5e9;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .icon {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">🏦</div>
+            <h1>Thông Báo Biến Động Số Dư</h1>
+            <div class="subtitle">ABC Bank - Ngân hàng số an toàn & hiện đại</div>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Kính gửi Quý khách <strong th:text="${accountName}">Nguyễn Văn A</strong>,</p>
+            
+            <p th:if="${transactionType == 'DEBIT'}">
+                Tài khoản của Quý khách vừa có giao dịch <strong style="color: #dc2626;">chuyển tiền đi</strong>.
+            </p>
+            <p th:if="${transactionType == 'CREDIT'}">
+                Tài khoản của Quý khách vừa <strong style="color: #16a34a;">nhận tiền</strong> từ giao dịch chuyển khoản.
+            </p>
+            
+            <div class="transaction-box">
+                <div class="transaction-row">
+                    <span class="label">🔢 Mã giao dịch</span>
+                    <span class="value" th:text="${transactionId}">Trace360503</span>
+                </div>
+                <div class="transaction-row">
+                    <span class="label">📅 Thời gian giao dịch</span>
+                    <span class="value" th:text="${transactionTime}">20/12/2025 00:15:22</span>
+                </div>
+                <div class="transaction-row">
+                    <span class="label">💳 Số tài khoản</span>
+                    <span class="value" th:text="${accountNumber}">28xxx111</span>
+                </div>
+                <div class="transaction-row" th:if="${transactionType == 'DEBIT'}">
+                    <span class="label">📤 Số tiền chuyển đi</span>
+                    <span class="value" style="color: #dc2626; font-weight: bold;" th:text="${formattedTransactionAmount}">-2.000 ₫</span>
+                </div>
+                <div class="transaction-row" th:if="${transactionType == 'CREDIT'}">
+                    <span class="label">📥 Số tiền nhận được</span>
+                    <span class="value" style="color: #16a34a; font-weight: bold;" th:text="${formattedTransactionAmount}">+10.000 ₫</span>
+                </div>
+                <div class="transaction-row" th:if="${transactionType == 'DEBIT'}">
+                    <span class="label">👤 Người nhận</span>
+                    <span class="value" th:text="${otherPartyInfo}">NGUYEN NGOC SON - 2812886886</span>
+                </div>
+                <div class="transaction-row" th:if="${transactionType == 'CREDIT'}">
+                    <span class="label">👤 Người gửi</span>
+                    <span class="value" th:text="${otherPartyInfo}">NGUYEN NGOC SON - 2812886886</span>
+                </div>
+                <div class="transaction-row" th:if="${description != null and description != ''}">
+                    <span class="label">📝 Nội dung</span>
+                    <span class="value" th:text="${description}">Chuyen tien</span>
+                </div>
+            </div>
+            
+            <div class="balance-highlight">
+                <div class="balance-label">Số dư hiện tại của Quý khách</div>
+                <div class="balance-amount" th:text="${formattedBalance}">2.500.000 ₫</div>
+            </div>
+            
+            <p style="margin-top: 30px;">Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ của <strong>ABC Bank</strong>. Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi qua:</p>
+            
+            <ul style="color: #64748b; margin-top: 15px;">
+                <li>📞 Hotline: <strong>1900 8888</strong> (24/7)</li>
+                <li>📧 Email: <strong>support@abcbank.com</strong></li>
+                <li>💬 Live Chat: <strong>abcbank.com/support</strong></li>
+            </ul>
+            
+            <div class="warning-box">
+                <p>⚠️ <strong>Lưu ý bảo mật:</strong> Nếu Quý khách không thực hiện giao dịch này, vui lòng liên hệ ngay với ABC Bank qua hotline <strong>1900 8888</strong> để được hỗ trợ kịp thời.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>ABC Bank</strong> - Ngân hàng số hàng đầu Việt Nam</p>
+            <div class="footer-links">
+                <a href="#">Điều khoản sử dụng</a> | 
+                <a href="#">Chính sách bảo mật</a> | 
+                <a href="#">Liên hệ</a>
+            </div>
+            <p style="margin-top: 15px;">Địa chỉ: 123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+            <p>&copy; 2025 ABC Bank. All rights reserved.</p>
+            <p style="font-size: 11px; color: #cbd5e1; margin-top: 10px;">
+                Email này được gửi tự động từ hệ thống. Vui lòng không trả lời email này.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
