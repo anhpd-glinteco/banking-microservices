@@ -31,3 +31,20 @@ Giữ endpoint đơn tài khoản hiện tại và response caller cũ. Không c
 - Có log SQL hoặc DB query chứng minh filter/pagination không thực hiện trên findAll trong RAM.
 - Cài bank-common và `mvn -B -ntp -f account-service/pom.xml verify` (thêm service được T01 chọn nếu khác Account). Chạy frontend lint/build nếu có caller đổi.
 - Ghi API được thêm, bằng chứng và bước đầu T06 vào progress.
+
+## Quyết định triển khai bổ sung (2026-10-19)
+
+- CRUD dùng DTO riêng trong Account; giữ response đăng ký OTP và mọi endpoint Account/Loan cũ ngoài phạm vi. Frontend chỉ export `createUser`, không có caller CRUD phải sửa.
+- `UserRepository` dùng fragment `UserProfileQueries` trả `Page<User>` và nhận `Pageable`. Native SQL parameter hóa filter, LIMIT/OFFSET; sort chỉ ghép cột từ whitelist. Lý do: JPA `setFirstResult(int)` không chứa offset của page=2147483647,size=100; native offset long giữ nguyên contract, không clamp. DB count giữ totalElements đúng cả page rỗng.
+- FK `accounts.user_id` giữ nguyên không cascade. DELETE precheck và flush trong transaction; lỗi FK do race được đổi thành DataIntegrityException/409, không trả SQL ra HTTP.
+- Runtime Docker Engine 29.9.1 từ chối Docker API 1.32 của Testcontainers theo Boot mặc định (r2 verify FAIL, 2 IT errors, không skip). Override test-only `testcontainers.version=1.21.4` theo bản vá upstream: https://github.com/testcontainers/testcontainers-java/releases/tag/1.21.4 . Không hạ minimum API Docker, không thay fixture volume. T07 tái sử dụng bản này thay phiên bản mặc định contract cũ.
+- MySQL test dùng container `mysql:8.0` độc lập, create-drop chỉ tại container; tắt Eureka/Kafka listener, mock producer/OTP. `DirtiesContext AFTER_CLASS` tránh Spring giữ datasource của container đã dừng giữa các IT class.
+
+## Bằng chứng nghiệm thu task
+
+- WSL `bank-th4`, Java 17, Maven 3.9.9; Maven cache `/mnt/d/Codex/work/bank-th4-m2`.
+- `mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f bank-common/pom.xml install`: exit 0, BUILD SUCCESS (`D:/Codex/outputs/bank-th4/t05-common.log`).
+- `mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f account-service/pom.xml -Pmysql-it verify`: exit 0, 11 unit/web tests + 2 MySQL IT, 0 failures/errors/skipped (`t05-verify-r3.log`, Failsafe XML tại `t05-reports/` cùng output folder). SQL có exact filter, ORDER BY created_at/id, LIMIT/OFFSET tại MySQL; test page max int không overflow.
+- MySQL IT bao phủ CRUD, missing IDs, filter riêng/AND, trang đầu/cuối/rỗng, totalElements, tie-break cùng createdAt; DELETE chặn user có account và loan, giữ balance/data, FK thật từ chối delete trực tiếp, user trống xóa được. Web/service test bao phủ 400/404/409 và chuyển race FK thành safe conflict.
+- Không đổi frontend caller nên không chạy lint/build trong T05. Không sửa FK/cascade, fixture hiện hữu, schema production hoặc endpoint tài chính.
+- Coordinator cần review/cherry-pick và chạy lại gate trên branch tích hợp trước khi cập nhật DONE; bước sau T07 dùng lại `mysql-it` và `MysqlIntegrationSupport`.

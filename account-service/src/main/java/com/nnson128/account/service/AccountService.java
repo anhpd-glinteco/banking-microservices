@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import com.nnson128.account.dto.*;
+import org.springframework.data.domain.*;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Service
 @RequiredArgsConstructor
@@ -175,8 +178,61 @@ public class AccountService {
                 .build();
     }
     
-    public User createUser(User user) {
-        return userRepository.save(user);
+    @Transactional
+    public UserProfile createUser(CreateUserRequest request) {
+        User user = User.builder()
+                .username(request.username()).email(request.email()).password(request.password())
+                .fullName(request.fullName()).phone(request.phone())
+                .identificationNumber(request.identificationNumber()).build();
+        try {
+            return UserProfile.from(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException ex) {
+            throw new DataIntegrityException("User conflicts with existing data", ex);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfile getUser(Long id) {
+        return UserProfile.from(requireUser(id));
+    }
+
+    @Transactional
+    public UserProfile updateUser(Long id, UpdateUserProfileRequest request) {
+        User user = requireUser(id);
+        user.setFullName(request.fullName());
+        user.setPhone(request.phone());
+        return UserProfile.from(userRepository.saveAndFlush(user));
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = requireUser(id);
+        if (accountRepository.existsByUserId(id)) throw new DataIntegrityException("User has accounts");
+        try {
+            userRepository.delete(user);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new DataIntegrityException("User has related data", ex);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserProfile> listUsers(int page, int size, String username, String email, String sort) {
+        String[] order = sort.split(",");
+        if (page < 0 || size < 1 || size > 100 || order.length != 2
+                || !java.util.Set.of("id", "username", "createdAt").contains(order[0])
+                || !java.util.Set.of("asc", "desc").contains(order[1])) {
+            throw new IllegalArgumentException("Invalid pagination");
+        }
+        Sort ordering = Sort.by(Sort.Direction.fromString(order[1]), order[0]);
+        if (!order[0].equals("id")) {
+            ordering = ordering.and(Sort.by(Sort.Direction.fromString(order[1]), "id"));
+        }
+        return userRepository.findProfiles(username, email, PageRequest.of(page, size, ordering)).map(UserProfile::from);
+    }
+
+    private User requireUser(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     public AccountDTO getAccount(Long id) {

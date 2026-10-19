@@ -1,6 +1,10 @@
 package com.nnson128.account.controller;
 
 import com.nnson128.account.entity.User;
+import com.nnson128.account.dto.*;
+import jakarta.validation.constraints.*;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import com.nnson128.account.service.AccountService;
 import com.nnson128.common.dto.AccountDTO;
 import com.nnson128.common.dto.CreateAccountRequest;
@@ -25,8 +29,34 @@ public class AccountController {
     }
     
     @PostMapping("/users")
-    public User createUser(@RequestBody User user) {
+    public UserProfile createUser(@NotNull @Valid @RequestBody CreateUserRequest user) {
         return accountService.createUser(user);
+    }
+
+    @GetMapping("/users/{id}")
+    public UserProfile getUser(@PathVariable @Positive Long id) {
+        return accountService.getUser(id);
+    }
+
+    @PatchMapping("/users/{id}")
+    public UserProfile updateUser(@PathVariable @Positive Long id,
+            @NotNull @Valid @RequestBody UpdateUserProfileRequest request) {
+        return accountService.updateUser(id, request);
+    }
+
+    @DeleteMapping("/users/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable @Positive Long id) {
+        accountService.deleteUser(id);
+    }
+
+    @GetMapping("/users")
+    public Page<UserProfile> listUsers(@RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) @Pattern(regexp = ".*\\S.*") @Size(max = 255) String username,
+            @RequestParam(required = false) @Pattern(regexp = ".*\\S.*") @Size(max = 255) String email,
+            @RequestParam(defaultValue = "id,asc") @Pattern(regexp = "(id|username|createdAt),(asc|desc)") String sort) {
+        return accountService.listUsers(page, size, username, email, sort);
     }
 
     @GetMapping("/{id}")
