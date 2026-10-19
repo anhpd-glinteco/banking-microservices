@@ -5,6 +5,7 @@ import com.nnson128.common.event.TransactionCreatedEvent;
 import com.nnson128.common.event.TransferCompletedEvent;
 import com.nnson128.common.event.TransferFailedEvent;
 import com.nnson128.transfer.entity.Transaction;
+import com.nnson128.transfer.client.AccountClient;
 import com.nnson128.transfer.kafka.TransferKafkaProducer;
 import com.nnson128.transfer.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransferService {
     private final TransactionRepository transactionRepository;
     private final TransferKafkaProducer kafkaProducer;
+    private final AccountClient accountClient;
 
     public Transaction initiateTransfer(TransferRequestDTO request) {
         // Check for duplicate request (idempotency)
@@ -31,6 +33,9 @@ public class TransferService {
             log.warn("Duplicate transfer request detected, returning existing transaction: {}", existingTx.getId());
             return existingTx;
         }
+
+        accountClient.requireAccount(request.getFromAccountNumber());
+        accountClient.requireAccount(request.getToAccountNumber());
 
         Transaction tx = Transaction.builder()
                 .fromAccountNumber(request.getFromAccountNumber())
