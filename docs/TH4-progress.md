@@ -20,14 +20,15 @@
 
 ## Bàn giao gần nhất
 
-- Ngày: 2026-10-19 (Asia/Saigon). T01 BLOCKED do credential SMTP có trong file được Git theo dõi; không ghi lại giá trị. Chưa task nào DONE; T02–T08 giữ TODO.
-- Isolation: Worktrunk exit 0, branch `codex/th4-integration`, worktree `D:\Codex\work\bank-th4-codex-th4-integration`. Checkout `D:\bank` vẫn ở main; bộ docs/CI chưa tracked được sao chép nguyên vẹn sang worktree.
-- Thay đổi an toàn tại worktree tích hợp: docker-compose.yml thay SMTP password literal bằng biến MAIL_PASSWORD bắt buộc; docs/tasks/T01-baseline-contracts.md ghi blocker. Không push/deploy, migration hay thay dữ liệu.
-- Kiểm tra: `git diff --check` exit 0; assertion SMTP dùng biến bắt buộc và không còn literal exit 0. `docker info --format ...` exit 1: Linux engine pipe không tồn tại. Java/Maven không có trên PATH; Maven portable đã giải nén tại D:\Codex\work\bank-th4-tools; Node 22 tải xong (file node22.zip thực chất là executable), JDK tải dở đã dừng (exit 1); chưa xác minh checksum/version, chưa sử dụng.
-- Frontend baseline worktree `D:\Codex\work\bank-th4-codex-th4-baseline-frontend`: không sửa source/không commit; npm ci đã hủy khi dừng bảo mật, exit 1; dependency installation có thể chưa hoàn tất.
-- Backend verify, frontend lint/build chuẩn Node 22, API/SQL/rollback: NOT RUN trong lượt này vì dừng bảo mật; không sử dụng kết quả cũ làm PASS. Contract T02–T08 chưa chốt và readiness chưa đổi.
-- Gỡ chặn: chủ tài khoản SMTP thu hồi/đổi credential đã lộ và xác nhận đã xử lý; chỉ xóa literal không thu hồi được credential trong lịch sử Git. Chưa rewrite lịch sử vì cần quyết định riêng, không tự xóa bằng chứng.
-- Tiếp theo: kiểm tra lại điều kiện bảo mật; khi đạt, chuyển T01 IN_PROGRESS, review worktree/diff và chạy lại baseline trước khi chốt contract/DAG.
+- Ngày: 2026-10-19 (Asia/Saigon). T01 DONE; Wave A T02/T03 IN_PROGRESS trong worktree riêng. T04–T08 chưa chạy vì phụ thuộc chưa DONE.
+- Branch tích hợp codex/th4-integration tại D:\Codex\work\bank-th4-codex-th4-integration. Commit frontend cd067a5, docs/contracts 26d689c, nghiệm thu T01 2531736. Checkout D:\bank giữ nguyên source người dùng; mirror docs cho lượt sau tìm đúng trạng thái.
+- T01 đổi sáu file frontend tối thiểu để lint/build được; giữ nguyên rule/lockfile. Cấu hình SMTP người dùng đã xóa credential được sao chép vào tích hợp; không dùng credential cũ/gửi mail thật. Người dùng xác nhận thuộc tác giả gốc và yêu cầu tiếp tục; blocker bảo mật gỡ cho phát triển cô lập.
+- Baseline thực tế: Temurin17.0.20.1+1/Maven3.9.9, bank-common install và verify sáu service đều exit0; chưa có test/0 XML reports. Node22.23.3 npm ci/lint/build trên worktree tích hợp exit0, lint0 lỗi/6 cảnh báo hooks; build cảnh báo Sass/chunk. Contract readiness assertion bảy file exit0. Git diff whitespace check với cr-at-eol exit0. Logs D:\Codex\outputs\bank-th4\T01-*.log.
+- Tool portable dưới D:\Codex\work\bank-th4-tools, archive D:\Codex\downloads\bank-th4; checksum JDK/Node/Maven khớp nguồn phát hành. Maven cache mặc định vẫn trên C:\Users\ASUS\.m2 (không di chuyển cache có sẵn).
+- Docker Desktop không khởi động: socket Docker/run/dockerInference không truy cập được, không có Linux engine pipe. Thử rename socket thất bại; lệnh xóa socket bị automatic policy chặn. Không reset/xóa volume. DB/API/SQL/rollback/Kafka integration NOT RUN. Người dùng hỏi có thể bỏ Docker: tiếp tục code/unit/web trong Wave A, giữ gate DB thật; không giả DONE.
+- Wave A: T02 cấu hình DB riêng + scripts/migration (worktree codex-th4-t02); T03 REST preflight/test + bỏ đúng hai Kafka exception import Account prerequisite (codex-th4-t03). Coordinator review diff/check sau bàn giao rồi xác định DONE/BLOCKED theo bằng chứng.
+- Rủi ro nền: frontend dependency audit agent báo25 vulnerabilities; không upgrade dependency trong baseline. Chưa kiểm tra UI/browser. Chưa chạy GitHub CI, MySQL permissions/migration/rollback hoặc end-to-end.
+- Tiếp theo: nhận commit T02/T03, review toàn bộ diff, tích hợp và chạy check có runtime; thiếu Docker/DB thật giữ BLOCKED ở task đó và không mở wave phụ thuộc.
 ## Mẫu bàn giao thay thế mục trên
 
 Giữ bảng trạng thái; thay thế bàn giao gần nhất, không nối log dài. Nếu cần giữ quyết định lâu dài, đưa vào file task hoặc quyết định chung của plan.
