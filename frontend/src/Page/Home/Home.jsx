@@ -238,7 +238,7 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
                 </Card>
 
                 <div style={{ marginTop: '24px' }}>
-                    <History accountId={account.id} accountNumber={account.accountNumber} isDashboard={true} />
+                    <History accountNumber={account.accountNumber} isDashboard={true} />
                 </div>
             </Col>
 
@@ -278,7 +278,7 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
             case 'qr-pay': return <QRCodeScanner account={account} onTransfer={handleTransfer} />;
             case 'qr-receive': return <QRCodeGenerator account={account} />;
             case 'loan': return <Loan account={account} onRefreshAccount={refreshBalance} />;
-            case 'history': return <History accountId={account.id} accountNumber={account.accountNumber} />;
+            case 'history': return <History accountNumber={account.accountNumber} />;
             case 'settings': return (
                 <Card title={t('accountSettings')} className="main-card">
                     <List>

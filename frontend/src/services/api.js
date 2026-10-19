@@ -30,7 +30,7 @@ export const initiateTransfer = (data) => post('/api/transfers', data);
 export const fetchTransferStatus = (id) => get(`/api/transfers/${id}/status`);
 
 // History APIs
-export const fetchHistory = (accountId) => get(`/api/history/${accountId}`);
+export const fetchHistory = (accountNumber) => get(`/api/history/number/${encodeURIComponent(accountNumber)}`);
 
 export default {
     get,

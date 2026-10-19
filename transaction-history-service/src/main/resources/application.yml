@@ -4,6 +4,12 @@ server:
 account:
   service:
     url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+    connect-timeout-ms: ${ACCOUNT_SERVICE_CONNECT_TIMEOUT_MS:2000}
+    read-timeout-ms: ${ACCOUNT_SERVICE_READ_TIMEOUT_MS:3000}
+
+history:
+  backfill:
+    enabled: ${HISTORY_BACKFILL_ENABLED:false}
 
 spring:
   application:
