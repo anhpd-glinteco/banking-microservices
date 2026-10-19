@@ -32,3 +32,9 @@ Request thiếu/null/blank/sai kiểu, số tiền không dương hoặc kỳ h�
 - `mvn -B -ntp -f bank-common/pom.xml install`; verify Account và Transfer. Nếu caller frontend đổi, chạy lint/build frontend.
 - Không log/echo password, OTP hoặc dữ liệu cá nhân trong response lỗi.
 - Ghi bằng chứng và bước đầu T05 vào progress.
+
+## Bằng chứng triển khai (2026-10-19)
+
+- Coordinator đã review và tích hợp commit `c11ac0d` vào branch `codex/th4-integration` (commit tích hợp `342f335`); diff check với CRLF được giữ nguyên đã đạt.
+- Chạy lại trên branch tích hợp bằng JDK 17/Maven portable trên Windows, Maven offline cache D:; `bank-common install` exit 0, `account-service verify` 7/7, `transfer-service verify` 27/27, không failure/error/skip. Surefire summaries: `D:\Codex\outputs\bank-th4\T04-account-integration-surefire.txt`, `T04-loan-service-integration-surefire.txt`, `T04-transfer-integration-surefire.txt`.
+- Docker/MySQL không thuộc gate T04; preflight/schema cũ và migration money precision tiếp tục thuộc T02/T08.
