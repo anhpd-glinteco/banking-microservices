@@ -21,6 +21,7 @@ public class Transaction {
 
     private String fromAccountNumber;
     private String toAccountNumber;
+    @Column(precision = 15, scale = 2)
     private BigDecimal amount;
     private String description;
     private String status; // PENDING, PROCESSING, SUCCESS, FAILED, COMPENSATED

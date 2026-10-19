@@ -28,23 +28,25 @@ public class LoanService {
      */
     @Transactional
     public Loan applyForLoan(Long accountId, BigDecimal amount, Integer termMonths, String purpose) {
+        if (accountId == null || accountId <= 0) throw new IllegalArgumentException("Account ID must be positive");
+        validateAmount(amount);
+        if (amount.compareTo(new BigDecimal("10000000")) < 0) {
+            throw new IllegalArgumentException("Số tiền vay tối thiểu là 10.000.000 VND (10 triệu)");
+        }
+        if (amount.compareTo(new BigDecimal("10000000000")) > 0) {
+            throw new IllegalArgumentException("Số tiền vay tối đa là 10.000.000.000 VND (10 tỷ)");
+        }
+        if (termMonths == null || termMonths < 6 || termMonths > 360) {
+            throw new IllegalArgumentException("Loan term must be between 6 and 360 months");
+        }
+        if (purpose == null || purpose.isBlank() || purpose.length() > 255) {
+            throw new IllegalArgumentException("Purpose must be nonblank and at most 255 characters");
+        }
         // Validate account exists
         AccountBank account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         
         // Validate loan parameters
-        if (amount.compareTo(new BigDecimal("10000000")) < 0) {
-            throw new IllegalArgumentException("Số tiền vay tối thiểu là 10.000.000 VND (10 triệu)");
-        }
-        
-        if (amount.compareTo(new BigDecimal("10000000000")) > 0) {
-            throw new IllegalArgumentException("Số tiền vay tối đa là 10.000.000.000 VND (10 tỷ)");
-        }
-        
-        if (termMonths < 6 || termMonths > 360) {
-            throw new IllegalArgumentException("Loan term must be between 6 and 360 months");
-        }
-        
         // Check for existing active loans
         List<Loan> activeLoans = loanRepository.findByAccountIdAndStatus(accountId, Loan.LoanStatus.ACTIVE);
         if (!activeLoans.isEmpty()) {
@@ -128,6 +130,8 @@ public class LoanService {
      */
     @Transactional
     public Loan makeRepayment(Long loanId, BigDecimal amount) {
+        if (loanId == null || loanId <= 0) throw new IllegalArgumentException("Loan ID must be positive");
+        validateAmount(amount);
         Loan loan = getLoanById(loanId);
         
         if (loan.getStatus() != Loan.LoanStatus.ACTIVE) {
@@ -166,6 +170,12 @@ public class LoanService {
                 loanId, amount, newRemaining);
         
         return updatedLoan;
+    }
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0 || amount.scale() > 2 || amount.precision() - amount.scale() > 13) {
+            throw new IllegalArgumentException("Amount must be positive and fit DECIMAL(15,2)");
+        }
     }
     
     /**

@@ -3,19 +3,24 @@ package com.nnson128.account.controller;
 import com.nnson128.account.entity.User;
 import com.nnson128.account.service.AccountService;
 import com.nnson128.common.dto.AccountDTO;
+import com.nnson128.common.dto.CreateAccountRequest;
 import com.nnson128.common.dto.LoginRequest;
 import com.nnson128.common.dto.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
+@Validated
 public class AccountController {
     private final AccountService accountService;
 
     @PostMapping
-    public AccountDTO createAccount(@RequestBody AccountDTO dto) {
+    public AccountDTO createAccount(@NotNull @Valid @RequestBody CreateAccountRequest dto) {
         return accountService.createAccount(dto);
     }
     

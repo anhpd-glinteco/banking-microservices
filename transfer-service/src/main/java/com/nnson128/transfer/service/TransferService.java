@@ -22,6 +22,16 @@ public class TransferService {
     private final AccountClient accountClient;
 
     public Transaction initiateTransfer(TransferRequestDTO request) {
+        if (request == null || request.getFromAccountNumber() == null || request.getFromAccountNumber().isBlank()
+                || request.getFromAccountNumber().length() > 255
+                || request.getToAccountNumber() == null || request.getToAccountNumber().isBlank()
+                || request.getToAccountNumber().length() > 255
+                || request.getFromAccountNumber().equals(request.getToAccountNumber())
+                || request.getAmount() == null || request.getAmount().signum() <= 0
+                || request.getAmount().scale() > 2 || request.getAmount().precision() - request.getAmount().scale() > 13
+                || (request.getDescription() != null && request.getDescription().length() > 255)) {
+            throw new IllegalArgumentException("Transfer fields are invalid");
+        }
         // Check for duplicate request (idempotency)
         Transaction existingTx = transactionRepository.findPendingOrProcessingTransaction(
             request.getFromAccountNumber(), 

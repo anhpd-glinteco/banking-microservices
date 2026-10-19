@@ -1,6 +1,7 @@
 package com.nnson128.transfer.client;
 
 import com.nnson128.common.exception.GlobalExceptionHandler;
+import com.nnson128.common.dto.TransferRequestDTO;
 import com.nnson128.transfer.controller.TransferController;
 import com.nnson128.transfer.controller.TransferExceptionHandler;
 import com.nnson128.transfer.entity.Transaction;
@@ -133,7 +134,7 @@ class AccountPreflightTest {
         upstreamStatus = 404;
         upstreamBody = "secret upstream body";
         mvc.perform(post("/api/transfers").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
-                .andExpect(status().isNotFound()).andExpect(jsonPath("$.message").value("Account not found"));
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.message").value("Requested resource was not found"));
         assertEquals(number.equals("001") ? 1 : 2, paths.size());
         assertNoWrites();
     }
@@ -182,6 +183,29 @@ class AccountPreflightTest {
                 Transaction.builder().id("existing").status("SUCCESS").build()));
         mvc.perform(get("/api/transfers/existing/status"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUCCESS"));
+        assertTrue(paths.isEmpty());
+        assertNoWrites();
+    }
+
+    @Test
+    void invalidTransferIsRejectedBeforeAccountLookupPersistenceOrEvent() throws Exception {
+        mvc.perform(post("/api/transfers").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fromAccountNumber\":\"001\",\"toAccountNumber\":\"001\",\"amount\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("amount")))
+                .andExpect(jsonPath("$.amount").doesNotExist())
+                .andExpect(jsonPath("$.rejectedValue").doesNotExist());
+        mvc.perform(post("/api/transfers").contentType(MediaType.APPLICATION_JSON).content("null"))
+                .andExpect(status().isBadRequest());
+        assertTrue(paths.isEmpty());
+        assertNoWrites();
+
+        TransferRequestDTO invalid = new TransferRequestDTO();
+        invalid.setFromAccountNumber("001");
+        invalid.setToAccountNumber("002");
+        invalid.setAmount(new java.math.BigDecimal("0"));
+        assertThrows(IllegalArgumentException.class, () -> new TransferService(repository, producer,
+                new AccountClient("http://127.0.0.1:" + server.getAddress().getPort())).initiateTransfer(invalid));
         assertTrue(paths.isEmpty());
         assertNoWrites();
     }

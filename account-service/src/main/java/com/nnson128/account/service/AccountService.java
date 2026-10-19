@@ -6,6 +6,7 @@ import com.nnson128.account.kafka.AccountKafkaProducer;
 import com.nnson128.account.repository.AccountRepository;
 import com.nnson128.account.repository.UserRepository;
 import com.nnson128.common.dto.AccountDTO;
+import com.nnson128.common.dto.CreateAccountRequest;
 import com.nnson128.common.dto.RegisterRequest;
 import com.nnson128.common.event.*;
 import com.nnson128.common.exception.*;
@@ -157,7 +158,7 @@ public class AccountService {
     }
 
     // CRUD for creating accounts (simplified)
-    public AccountDTO createAccount(AccountDTO dto) {
+    public AccountDTO createAccount(CreateAccountRequest dto) {
         User user = userRepository.findById(dto.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         AccountBank account = new AccountBank();
         account.setUser(user);
@@ -165,8 +166,13 @@ public class AccountService {
         account.setBalance(dto.getBalance() != null ? dto.getBalance() : BigDecimal.ZERO);
         account.setAccountName(dto.getAccountName());
         accountRepository.save(account);
-        dto.setId(account.getId());
-        return dto;
+        return AccountDTO.builder()
+                .id(account.getId())
+                .userId(dto.getUserId())
+                .accountNumber(account.getAccountNumber())
+                .accountName(account.getAccountName())
+                .balance(account.getBalance())
+                .build();
     }
     
     public User createUser(User user) {
