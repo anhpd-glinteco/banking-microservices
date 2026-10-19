@@ -39,5 +39,13 @@ Giữ Kafka cho debit/credit; REST chỉ đọc tài khoản từ Account DB. T�
 - AccountClient dùng RestClient, timeout2s/3s, encode path, không follow redirect; chỉ200 với đúng accountNumber được chấp nhận. 404 upstream trả404; lỗi khác trả503 cố định. Advice503 ưu tiên common RuntimeException handler.
 - Duplicate lookup giữ nguyên; giao dịch mới kiểm tra đủ hai tài khoản trước mọi save/event. Chỉ bỏ hai Kafka exception imports Account prerequisite; không đổi debit/credit.
 - Coordinator đọc toàn bộ diff, tích hợp commit efb160f và chạy Maven verify lại sau T02 config: 26 test,0 failures/errors/skips, exit0. Tests dùng HTTP server JDK thật + MockMvc controller/service, repository/producer mocked; kiểm tra valid/order, duplicate, 404, timeout/refused, HTTP khác, payload lỗi và không save/event khi lỗi.
+
+## Nghiệm thu MySQL/Kafka thật (2026-10-19)
+
+- Trong WSL2 `bank-th4`, Account dùng riêng `bank_account/account_app`, Transfer dùng riêng `bank_transfer/transfer_app`; Kafka 4.0.1 và Redis 7.4.2 cô lập, chỉ bind localhost.
+- `GET /api/accounts/number/TH4-A` → 200 từ DB Account. `POST /api/transfers` với `TH4-A → TH4-B`, 125.25 → 200; SQL dưới `transfer_app` xác nhận transaction `SUCCESS` trong `bank_transfer`. Kafka consumer chạy debit/credit; SQL dưới `account_app`: TH4-A 4875.00, TH4-B 1125.25.
+- Tài khoản nguồn không tồn tại →404; dừng Account rồi gửi transfer với hai số hợp lệ →503 `Account service unavailable`. Hai nhánh lỗi không tăng số transaction trong DB.
+- Linux Maven verify: Transfer 26 tests, 0 failures/errors/skips; Account/History verify BUILD SUCCESS. HTTP response và runtime/Maven logs ở `D:\Codex\outputs\bank-th4`.
+- E2E T03 đạt cho REST preflight → Account/MySQL, Transfer/MySQL và Kafka balance flow; điều này không tuyên bố DB/Kafka là distributed-atomic. **Nghiệm thu T03 đạt; coordinator cập nhật trạng thái duy nhất trong progress.**
 - Common install và verify Account/Transfer/History sau tích hợp đều exit0; Account/History chưa có test. Log waveA-*.log dưới D:\Codex\outputs\bank-th4.
-- Transfer→Account→MySQL và persistence Transfer/Kafka thực tế: NOT RUN do không có môi trường fixture. Mock repository không phải chứng minh DB; còn thiếu tiêu chí này trước nghiệm thu.
+- Handoff trước khi có WSL fixture ghi Transfer→Account→MySQL và persistence Transfer/Kafka **NOT RUN**; nghiệm thu thật mới ở phần bên trên, không dùng mock thay bằng chứng DB.

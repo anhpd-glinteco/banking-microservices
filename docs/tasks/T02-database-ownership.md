@@ -40,4 +40,12 @@ Giữ một MySQL server nếu đủ; tách DB và quyền, không tạo FK xuy�
 - Scripts `scripts/db/*.ps1` chỉ fixture loopback/cổng >3306 và `-FixtureOnly`, không overwrite backup/đích có bảng; provision từ chối user có quyền lạ, không REVOKE/đổi password có sẵn. `docs/database-migration.md` mô tả quiescence, trusted backup, copy/verify/restore và quyền.
 - `pwsh -NoProfile -File scripts/db/self-check.ps1`: exit 0, 24 assertions/parser checks; không kết nối DB. Ba compose `config --quiet` với env giả: exit 0; JSON assertions datasource/build context/REST URL PASS. docker-compose.yml còn cảnh báo version obsolete nền.
 - Java 17: common install, Account/Transfer/History verify đều exit 0; bốn module chưa có test trên branch T02, chỉ chứng minh build. Maven repository cache vẫn dùng C:\Users\ASUS\.m2 theo cấu hình hiện hữu.
-- SQL quyền, API→DB, copy/restore fixture thực tế: **NOT RUN**, Docker daemon không sẵn có. Không chạy migration dữ liệu thật. Chưa đủ nghiệm thu để DONE; coordinator giữ gate DB và trạng thái trong progress.
+- Handoff implementation trước khi có WSL fixture: MySQL quyền chéo, API→DB, copy/restore fixture **NOT RUN**; không chạy migration dữ liệu thật. Kết quả nghiệm thu fixture mới ghi bên dưới.
+
+## Nghiệm thu fixture thật (2026-10-19)
+
+- Trong WSL2 `bank-th4`, MySQL 8.0.46 chỉ bind localhost:13306; seed giả `bank` có 2 users, 2 accounts, 1 loan, 1 transaction, 1 history. Không đọc/ghi dữ liệu người dùng.
+- `provision.ps1`, `copy-legacy.ps1`, `verify.ps1`, `restore-fixture.ps1` với `-FixtureOnly`: exit 0. Fingerprint count/cột/toàn hàng (gồm DECIMAL, PK và payload) khớp; schema nguồn `bank` trước/sau giống nhau; `bank_restore` giống manifest.
+- Ma trận bổ sung: mỗi service user SELECT tất cả bảng mình; 16 truy vấn SELECT/UPDATE trên các DB service khác bị từ chối bằng MySQL access-denied. Không đổi/revoke grant hiện có; chạy trên volume fixture riêng.
+- REST T03 tạo transaction qua Transfer API; truy vấn dưới `transfer_app` thấy row thật trong `bank_transfer`. `account_app` đọc hai tài khoản đã copy trong `bank_account`.
+- Bằng chứng/dump giả: `D:\Codex\outputs\bank-th4\T02-fixture-20261019`; logs Maven/T02 tại `D:\Codex\outputs\bank-th4`. Không reset/xóa volume. **Nghiệm thu T02 đạt; coordinator cập nhật trạng thái duy nhất trong progress.**
