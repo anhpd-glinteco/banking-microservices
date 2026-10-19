@@ -1,13 +1,17 @@
 server:
   port: 8082
 
+account:
+  service:
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+
 spring:
   application:
     name: transfer-service
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bank}
-    username: ${DB_USER:bank}
-    password: ${DB_PASSWORD:bank}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${TRANSFER_DB_NAME:bank_transfer}
+    username: ${TRANSFER_DB_USER:transfer_app}
+    password: ${TRANSFER_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

@@ -33,3 +33,11 @@ Giữ một MySQL server nếu đủ; tách DB và quyền, không tạo FK xuy�
 - `docker compose -f compose.yml config --quiet`, lặp lại cho compose.dev.yml và docker-compose.yml với env giả theo contract; không in secret.
 - `mvn -B -ntp -f bank-common/pom.xml install`; verify Account/Transfer/History sau thay đổi. Chạy SQL quyền truy cập và persistence theo lệnh cụ thể T01 bổ sung vào đây.
 - Ghi kết quả, đường dẫn hướng dẫn migration và bước đầu T03 vào progress.
+
+## Bàn giao implementation (2026-10-19)
+
+- Cấu hình ba schema/user riêng; cả ba compose nhận env tường minh, không nạp `.env` vào từng container. Sửa build context legacy vì Dockerfile COPY bank-common từ repo root; compose.dev chỉ là infrastructure, không có Java service.
+- Scripts `scripts/db/*.ps1` chỉ fixture loopback/cổng >3306 và `-FixtureOnly`, không overwrite backup/đích có bảng; provision từ chối user có quyền lạ, không REVOKE/đổi password có sẵn. `docs/database-migration.md` mô tả quiescence, trusted backup, copy/verify/restore và quyền.
+- `pwsh -NoProfile -File scripts/db/self-check.ps1`: exit 0, 24 assertions/parser checks; không kết nối DB. Ba compose `config --quiet` với env giả: exit 0; JSON assertions datasource/build context/REST URL PASS. docker-compose.yml còn cảnh báo version obsolete nền.
+- Java 17: common install, Account/Transfer/History verify đều exit 0; bốn module chưa có test trên branch T02, chỉ chứng minh build. Maven repository cache vẫn dùng C:\Users\ASUS\.m2 theo cấu hình hiện hữu.
+- SQL quyền, API→DB, copy/restore fixture thực tế: **NOT RUN**, Docker daemon không sẵn có. Không chạy migration dữ liệu thật. Chưa đủ nghiệm thu để DONE; coordinator giữ gate DB và trạng thái trong progress.
