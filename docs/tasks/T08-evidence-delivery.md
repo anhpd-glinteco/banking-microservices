@@ -34,3 +34,23 @@ Luồng phải thể hiện Client → Transfer → Account → Account DB → A
 - Chạy toàn bộ Maven verify và frontend npm ci/lint/build ở [plan](../TH4-plan.md). Ghi số test và các kiểm tra end-to-end đã chạy riêng.
 - Tài liệu đủ 10 mục, sơ đồ khớp code, request tái lập được với dữ liệu giả; bằng chứng không chứa secret/PII. Deliverable sinh thêm đặt dưới D:\Codex\outputs\bank-th4, source docs giữ trong repo.
 - Chỉ đánh dấu T08 DONE khi mọi minh chứng đạt; nếu môi trường chưa cho phép test thì BLOCKED, không viết kết luận hoàn thành TH4.
+
+## Quyết định triển khai (2026-10-19)
+
+- Project test riêng `bank-th4-test`, không fixed container_name, volume theo TH4_FIXTURE_ID ngẫu nhiên; giữ mọi volume sau down/retry. Fixture T02 cũ vẫn chạy nên lượt này override MySQL/Kafka/Redis thành23306/49092/26379, giữ app18081/18082/18084; tất cả bind loopback. Không stop/ghi/reset project cũ.
+- Dockerfile test chỉ copy jar sau Maven verify; dùng Temurin17 JRE Alpine, đã kiểm tra wget có thật. Kafka4 KRaft dùng listener nội bộ kafka:9092 và EXTERNAL localhost:49092. Volume Kafka phải mount `/var/lib/kafka/data` tồn tại và appuser sở hữu trong image; lần đầu mount đường dẫn /tmp chưa tồn tại lỗi permission, giữ nguyên volume thất bại và retry bằng identity mới.
+- `th4-init.ps1` tạo credentials giả ngoài repo; loader chỉ nhận đủ key allowlist, từ chối duplicate/key lạ, port trùng/ngoài range, identity sai và password ngoài dạng generated. Validate map trước khi đổi processenv. `th4-self-check.ps1` kiểm parser, sáu case env không an toàn và composeconfig; không in credentials.
+- `th4-e2e.ps1` dựng infra, tái sử dụng scripts/db/provision.ps1, rồi dựng app; chặn fixture đã có dữ liệu trước seed, không overwrite. Account stop/restart chỉ trong project test và restart trong finally. Script fail-fast, ghi exit/check/count/API error shape và SQL an toàn; không dump payload/password/OTP.
+- `th4-verify.ps1` chạy đủ7 lệnh Maven, thêm Account mysql-it và frontend ci/lint/build; giữ log/exit/XML counts. Modules không test ghi build-only. CI thêm Ubuntu Docker mysql-it gate >0test,0failure/error/skipped và upload Failsafe; remoteCI chưa chạy vì không push. Không tự ghi progress.
+- Tài liệu đúng10 nội dung ở docs/data-and-service-design.md, phân biệt DBconstraint với validationHTTP và FK thật/logical, REST đồng bộ/Kafka bất đồng bộ, ghi rõ auth/plaintext và DB-event non-atomic baseline.
+
+- Readiness MySQL phải là authenticated TCP SELECT1: mysqladmin localhost/socket có thể healthy ở temporary initserver trước khi TCP/grant sẵn sàng. PowerShell HTTP đặt Accept application/json để Actuator không trả vendor MIME dưới dạng Byte[]; giữ timeout60s thật, không bỏ health gate. Các lượt setup lỗi giữ evidence exit1 và volume riêng; không coi là backend lỗi hay PASS.
+- E2E ghi riêng Compose arguments/exit/log an toàn (config chỉ --quiet), API ErrorResponse shape và count; History poll đợi TRANSFER_COMPLETED cho cả owner trước khi so alias để tránh race event còn đến.
+
+## Bằng chứng nghiệm thu (2026-10-20)
+
+- Runner final source: 11 lệnh exit0 (common +6 service, Account mysql-it, frontend ci/lint/build). Unit/web Account11/Transfer27/History8; MySQL IT8, tất cả0failure/error/skipped. Common/Notification/Gateway/Discovery chỉ build-only. Coordinator đã kiểm XML và SHA256 ba jar; build-summary.json, coordinator-build-check.json, verified-jars.json trong D:/Codex/outputs/bank-th4/T08-20261019.
+- E2E-r5 exit0,41 checks: CRUD/pagination, approve loan, REST PROCESSING→Kafka SUCCESS; SQL cuối Alice59999000.00/Bob1001000.00; History3 event mỗi owner;400/404/503 không tăng transaction count1; Account restart healthy. Năm bảng owner đọc được,12 SELECT/UPDATE chéo bị từ chối,0FK xuyên schema. SQL/metadata không chứa password/OTP/raw payload.
+- Các lần trước exit1 do cấu hình Kafka volume, MySQL readiness và HTTP helper content-type; đã sửa root cause trong test setup và giữ nguyên evidence/volume. Không tính chúng là PASS; không sửa production backend ở T08.
+- Self-check5 parser/6 unsafe-env cases/config và actionlint exit0. Metadata thật xác nhận History LONGTEXT và Loan enum; tài liệu10 mục có schema/API constraints và diagrams. T02 retained source/restore khớp manifest5 bảng bằng kiểm tra chỉ đọc.
+- Chưa push/deploy/merge main; remote CI NOT RUN. Coordinator còn chạy self-check và E2E sau tích hợp trước khi cập nhật DONE.

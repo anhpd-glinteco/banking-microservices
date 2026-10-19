@@ -67,6 +67,50 @@ jobs:
                   if totals['tests'] == totals['skipped']:
                       print(f'::warning::{module}: no tests executed; tests not demonstrated.')
 
+  mysql-integration:
+    name: Account / MySQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: '**/pom.xml'
+      - name: Build and install common library
+        run: mvn -B -ntp -f bank-common/pom.xml install
+      - name: Verify MySQL transactions and profile queries
+        run: mvn -B -ntp -f account-service/pom.xml -Pmysql-it verify
+      - name: Require executed integration tests without failures or skips
+        if: always()
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          reports = sorted(Path('account-service/target/failsafe-reports').glob('TEST-*.xml'))
+          totals = dict.fromkeys(('tests', 'failures', 'errors', 'skipped'), 0)
+          for report in reports:
+              root = ET.parse(report).getroot()
+              for key in totals:
+                  totals[key] += int(root.get(key, 0))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(f'Account MySQL integration: {totals}; reports={len(reports)}\n')
+          if not reports or totals['tests'] <= 0 or any(totals[key] for key in ('failures', 'errors', 'skipped')):
+              raise SystemExit('MySQL integration requires executed tests and zero failures/errors/skips.')
+      - name: Upload integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-mysql-integration-reports
+          path: account-service/target/failsafe-reports/
+          if-no-files-found: error
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
