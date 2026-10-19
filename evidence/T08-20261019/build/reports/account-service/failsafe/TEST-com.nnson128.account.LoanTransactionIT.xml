@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-failsafe-plugin/xsd/failsafe-test-report-3.0.xsd" version="3.0" name="com.nnson128.account.LoanTransactionIT" time="60.709" tests="6" errors="0" skipped="0" failures="0">
+  <testcase name="missingLoanDoesNotMutateExistingFixture" classname="com.nnson128.account.LoanTransactionIT" time="5.669">
+    </testcase>
+  <testcase name="missingAccountDoesNotMutateLoan" classname="com.nnson128.account.LoanTransactionIT" time="0.036">
+    </testcase>
+  <testcase name="approvalCommitsBalanceAndLoanTogether" classname="com.nnson128.account.LoanTransactionIT" time="0.09">
+    </testcase>
+  <testcase name="repaymentCommitsPositiveAmountsAndRejectsZeroAndNegative" classname="com.nnson128.account.LoanTransactionIT" time="0.092">
+    </testcase>
+  <testcase name="failureAfterFlushedAccountUpdateRollsBackEveryField" classname="com.nnson128.account.LoanTransactionIT" time="0.149">
+    </testcase>
+  <testcase name="invalidApprovalStatusDoesNotMutateData" classname="com.nnson128.account.LoanTransactionIT" time="0.04">
+    </testcase>
+</testsuite>

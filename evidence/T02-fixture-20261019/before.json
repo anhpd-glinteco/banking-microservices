@@ -1,0 +1,32 @@
+[
+  {
+    "Table": "users",
+    "Count": 2,
+    "Columns": "id,created_at,email,full_name,identification_number,password,phone,updated_at,username",
+    "Digest": "67D670323E177CE677A6EB94F592EE9170E2103AFD2DDC0B2EEA4BAE62DB6AB0"
+  },
+  {
+    "Table": "accounts",
+    "Count": 2,
+    "Columns": "id,account_name,account_number,balance,created_at,updated_at,user_id",
+    "Digest": "27F138ACB02D1034AB0820EFADFC3C0ECF79CD231BA19BFFA160821A689B5D54"
+  },
+  {
+    "Table": "loans",
+    "Count": 1,
+    "Columns": "id,account_id,approved_at,created_at,disbursed_at,interest_rate,loan_amount,monthly_payment,purpose,remaining_amount,status,term_months,updated_at",
+    "Digest": "87B07933D575170812D465EC500ACA2D521F9AF76B0A9B1F52F2C1DA2674EBDF"
+  },
+  {
+    "Table": "transactions",
+    "Count": 1,
+    "Columns": "id,amount,created_at,description,failure_reason,from_account_number,retry_count,status,to_account_number,updated_at",
+    "Digest": "8E888EF0BD5F14EB60C52FB8102F61BD7D9AF77F346C14CFEBF1F428C316C55A"
+  },
+  {
+    "Table": "transaction_history",
+    "Count": 1,
+    "Columns": "id,event_data,event_type,timestamp,transaction_id",
+    "Digest": "C8EA4CFBB852CED8F49ACF78E84792CD9E2F7E72C5CF9101D259E610D583F5F3"
+  }
+]

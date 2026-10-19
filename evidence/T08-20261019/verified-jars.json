@@ -1,0 +1,21 @@
+{
+  "sourceBaseCommit": "3f0ab59986c52814582d1cf3010003dc5edf58f3",
+  "backendTrackedSourceUnchanged": true,
+  "jars": [
+    {
+      "module": "account-service",
+      "file": "account-service-0.0.1-SNAPSHOT.jar",
+      "sha256": "6572865177ae2965f2185fd8ed693a383cd51bcef15f5d7b786e91e22468d2bf"
+    },
+    {
+      "module": "transfer-service",
+      "file": "transfer-service-0.0.1-SNAPSHOT.jar",
+      "sha256": "172634b349933a4d26ad75939e2f708b9b091165a9bf39a8b30d7bde62043dbe"
+    },
+    {
+      "module": "transaction-history-service",
+      "file": "transaction-history-service-0.0.1-SNAPSHOT.jar",
+      "sha256": "91de132f93c65e9e8e3c062f6bcfa29fd72aab969e4c57f123d7f7f3d6a1ccca"
+    }
+  ]
+}

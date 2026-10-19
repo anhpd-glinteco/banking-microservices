@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.nnson128.account.controller.UserProfileCrudTest" time="5.232" tests="3" errors="0" skipped="0" failures="0">
+  <testcase name="safeProfileAndCrudStatuses" classname="com.nnson128.account.controller.UserProfileCrudTest" time="0.172">
+    </testcase>
+  <testcase name="rejectsInvalidBodiesAndPagination" classname="com.nnson128.account.controller.UserProfileCrudTest" time="0.096" />
+  <testcase name="missingAndRelatedUsersReturnSafeErrors" classname="com.nnson128.account.controller.UserProfileCrudTest" time="0.009" />
+</testsuite>

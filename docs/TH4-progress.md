@@ -19,6 +19,8 @@
 
 ## Bàn giao gần nhất
 
+- Bản nộp 2026-10-20: thêm evidence/ được chọn lọc, liên kết tương đối và README tái lập; sửa mô tả CI MySQL. Chỉ đổi docs/evidence, không chạy lại runtime. XML đóng gói bỏ machine properties/stdout/stderr, giữ testcase/count. Kiểm tra liên kết, 54 test zero failure/error/skip và 41 E2E checks từ bằng chứng cũ đạt. Được người dùng cho phép fast-forward main cục bộ và tạo submission-20261020.zip; không push/deploy.
+
 - Ngày 2026-10-20 (Asia/Saigon). T01–T08 DONE; branch codex/th4-integration, worktree D:\Codex\work\bank-th4-codex-th4-integration. T05 tích hợp77bc9dd, T07 fea66dd, T08 nguồn7d61b47/tích hợp956c4bd. Không push/deploy/merge main; D:\bank giữ nguyên thay đổi source/SMTP của người dùng.
 - Runtime WSL bank-th4/Docker29.9.1 hoạt động; không cần admin/cài lại. Bổ sung Testcontainers test-only1.21.4 cho Docker29. Môi trường/tool/cache trên D; dữ liệu thật/SMTP không dùng, không reset/delete volume. Stack cũ13306/39092/16379 giữ nguyên; test riêng23306/49092/26379 + API18081/18082/18084, loopback, credentials giả ngoài git.
 - Full verify final backend/frontend source: 11 lệnh exit0 (common install +6 service verify +Account mysql-it +frontend ci/lint/build). Unit/web Account11/Transfer27/History8 và MySQL IT8,0failure/error/skipped; module không test chỉ build-only. Coordinator đối chiếu XML, source không đổi và SHA256 cả3 jar. Báo cáo D:\Codex\outputs\bank-th4\T08-20261019\build\build-summary.json và coordinator-build-check.json cùng task folder.

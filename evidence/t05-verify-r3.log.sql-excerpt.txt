@@ -1,0 +1,90 @@
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 16.62 s -- in com.nnson128.account.controller.LoanValidationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.349 s -- in com.nnson128.account.controller.UserProfileCrudTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.328 s -- in com.nnson128.account.service.LoanServiceValidationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.215 s -- in com.nnson128.account.service.UserDeletionTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+Hibernate: alter table accounts drop foreign key FKnjuop33mo69pd79ctplkck40n
+Hibernate: drop table if exists accounts
+Hibernate: drop table if exists loans
+Hibernate: drop table if exists users
+Hibernate: create table accounts (balance decimal(15,2) not null, created_at datetime(6), id bigint not null auto_increment, updated_at datetime(6), user_id bigint not null, account_name varchar(255), account_number varchar(255) not null, primary key (id)) engine=InnoDB
+Hibernate: create table loans (interest_rate decimal(5,2) not null, loan_amount decimal(15,2) not null, monthly_payment decimal(15,2), remaining_amount decimal(15,2) not null, term_months integer not null, account_id bigint not null, approved_at datetime(6), created_at datetime(6), disbursed_at datetime(6), id bigint not null auto_increment, updated_at datetime(6), purpose varchar(255) not null, status enum ('ACTIVE','APPROVED','DEFAULTED','PAID_OFF','PENDING','REJECTED') not null, primary key (id)) engine=InnoDB
+Hibernate: create table users (created_at datetime(6), id bigint not null auto_increment, updated_at datetime(6), email varchar(255) not null, full_name varchar(255), identification_number varchar(255), password varchar(255), phone varchar(255), username varchar(255) not null, primary key (id)) engine=InnoDB
+Hibernate: alter table accounts add constraint UK6kplolsdtr3slnvx97xsy2kc8 unique (account_number)
+Hibernate: alter table users add constraint UK6dotkott2kjsp8vw4d0m25fb7 unique (email)
+Hibernate: alter table users add constraint UKr43af9ap4edm43mmtq01oddj6 unique (username)
+Hibernate: alter table accounts add constraint FKnjuop33mo69pd79ctplkck40n foreign key (user_id) references users (id)
+Hibernate: insert into users (created_at,email,full_name,identification_number,password,phone,updated_at,username) values (?,?,?,?,?,?,?,?)
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: insert into accounts (account_name,account_number,balance,created_at,updated_at,user_id) values (?,?,?,?,?,?)
+Hibernate: insert into loans (account_id,approved_at,created_at,disbursed_at,interest_rate,loan_amount,monthly_payment,purpose,remaining_amount,status,term_months,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?)
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select ab1_0.id from accounts ab1_0 where ab1_0.user_id=? limit ?
+Hibernate: select count(*) from users u1_0 where u1_0.id=?
+Hibernate: select ab1_0.id,ab1_0.account_name,ab1_0.account_number,ab1_0.balance,ab1_0.created_at,ab1_0.updated_at,ab1_0.user_id from accounts ab1_0 where ab1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: delete from users where id=?
+Hibernate: select count(*) from users u1_0 where u1_0.id=?
+Hibernate: select count(*) from accounts ab1_0 where ab1_0.id=?
+Hibernate: select count(*) from loans l1_0 where l1_0.id=?
+Hibernate: select l1_0.id,l1_0.account_id,l1_0.approved_at,l1_0.created_at,l1_0.disbursed_at,l1_0.interest_rate,l1_0.loan_amount,l1_0.monthly_payment,l1_0.purpose,l1_0.remaining_amount,l1_0.status,l1_0.term_months,l1_0.updated_at from loans l1_0 where l1_0.id=?
+Hibernate: delete from loans where id=?
+Hibernate: select ab1_0.id,ab1_0.account_name,ab1_0.account_number,ab1_0.balance,ab1_0.created_at,ab1_0.updated_at,ab1_0.user_id from accounts ab1_0 where ab1_0.id=?
+Hibernate: delete from accounts where id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select ab1_0.id from accounts ab1_0 where ab1_0.user_id=? limit ?
+Hibernate: delete from users where id=?
+Hibernate: select count(*) from users u1_0 where u1_0.id=?
+Hibernate: alter table accounts drop foreign key FKnjuop33mo69pd79ctplkck40n
+Hibernate: drop table if exists accounts
+Hibernate: drop table if exists loans
+Hibernate: drop table if exists users
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 55.90 s -- in com.nnson128.account.UserDeletionIT
+Hibernate: alter table accounts drop foreign key FKnjuop33mo69pd79ctplkck40n
+Hibernate: drop table if exists accounts
+Hibernate: drop table if exists loans
+Hibernate: drop table if exists users
+Hibernate: create table accounts (balance decimal(15,2) not null, created_at datetime(6), id bigint not null auto_increment, updated_at datetime(6), user_id bigint not null, account_name varchar(255), account_number varchar(255) not null, primary key (id)) engine=InnoDB
+Hibernate: create table loans (interest_rate decimal(5,2) not null, loan_amount decimal(15,2) not null, monthly_payment decimal(15,2), remaining_amount decimal(15,2) not null, term_months integer not null, account_id bigint not null, approved_at datetime(6), created_at datetime(6), disbursed_at datetime(6), id bigint not null auto_increment, updated_at datetime(6), purpose varchar(255) not null, status enum ('ACTIVE','APPROVED','DEFAULTED','PAID_OFF','PENDING','REJECTED') not null, primary key (id)) engine=InnoDB
+Hibernate: create table users (created_at datetime(6), id bigint not null auto_increment, updated_at datetime(6), email varchar(255) not null, full_name varchar(255), identification_number varchar(255), password varchar(255), phone varchar(255), username varchar(255) not null, primary key (id)) engine=InnoDB
+Hibernate: alter table accounts add constraint UK6kplolsdtr3slnvx97xsy2kc8 unique (account_number)
+Hibernate: alter table users add constraint UK6dotkott2kjsp8vw4d0m25fb7 unique (email)
+Hibernate: alter table users add constraint UKr43af9ap4edm43mmtq01oddj6 unique (username)
+Hibernate: alter table accounts add constraint FKnjuop33mo69pd79ctplkck40n foreign key (user_id) references users (id)
+Hibernate: insert into users (created_at,email,full_name,identification_number,password,phone,updated_at,username) values (?,?,?,?,?,?,?,?)
+Hibernate: insert into users (created_at,email,full_name,identification_number,password,phone,updated_at,username) values (?,?,?,?,?,?,?,?)
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: update users set created_at=?,email=?,full_name=?,identification_number=?,password=?,phone=?,updated_at=?,username=? where id=?
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select * from users where (? is null or username = ?) and (? is null or email = ?) order by created_at asc, id asc limit ? offset ?
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select * from users where (? is null or username = ?) and (? is null or email = ?) order by created_at asc, id asc limit ? offset ?
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select * from users where (? is null or username = ?) and (? is null or email = ?) order by id asc limit ? offset ?
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select * from users where (? is null or username = ?) and (? is null or email = ?) order by id asc limit ? offset ?
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select * from users where (? is null or username = ?) and (? is null or email = ?) order by id desc limit ? offset ?
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select count(*) from users where (? is null or username = ?) and (? is null or email = ?)
+Hibernate: select * from users where (? is null or username = ?) and (? is null or email = ?) order by username desc, id desc limit ? offset ?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select ab1_0.id from accounts ab1_0 where ab1_0.user_id=? limit ?
+Hibernate: delete from users where id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select ab1_0.id from accounts ab1_0 where ab1_0.user_id=? limit ?
+Hibernate: delete from users where id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.full_name,u1_0.identification_number,u1_0.password,u1_0.phone,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.id=?
+Hibernate: alter table accounts drop foreign key FKnjuop33mo69pd79ctplkck40n
+Hibernate: drop table if exists accounts
+Hibernate: drop table if exists loans
+Hibernate: drop table if exists users
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.26 s -- in com.nnson128.account.UserProfileRepositoryIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

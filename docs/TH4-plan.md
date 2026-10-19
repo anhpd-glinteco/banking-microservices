@@ -72,6 +72,6 @@ npm run lint --prefix frontend
 npm run build --prefix frontend
 ```
 
-Trong PowerShell phải kiểm tra `$LASTEXITCODE` sau từng lệnh; dừng chuỗi phụ thuộc khi lỗi. Test integration cần MySQL/Kafka/Redis theo contract T01; CI hiện chưa dựng hạ tầng hay kiểm thử end-to-end. Lỗi baseline phải sửa trong T01 hoặc ghi BLOCKED, không bỏ gate CI.
+Trong PowerShell phải kiểm tra `$LASTEXITCODE` sau từng lệnh; dừng chuỗi phụ thuộc khi lỗi. Test integration cần MySQL/Kafka/Redis theo contract T01; CI đã có job MySQL integration; Kafka end-to-end chạy riêng, remote CI chưa chạy. Lỗi baseline phải sửa trong T01 hoặc ghi BLOCKED, không bỏ gate CI.
 
 Tham chiếu cấu hình action: [setup-java v4](https://github.com/actions/setup-java/blob/v4/README.md), [setup-node v4](https://github.com/actions/setup-node/blob/v4/README.md), [checkout v4](https://github.com/actions/checkout/blob/v4/README.md).

@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-20 Asia/Saigon",
+  "sourceCodeCommit": "956c4bd",
+  "e2eExitCode": 0,
+  "e2eChecks": 41,
+  "composeActions": 5,
+  "allComposeExitCodesZero": true,
+  "finalSqlBalancesAndHistory": "PASS",
+  "backendAndFrontendSourceUnchangedFromFullVerify": true,
+  "verifiedJarHashes": "PASS",
+  "actionlintExitCode": 0,
+  "selfCheck": {
+    "exitCode": 0,
+    "parsers": 5,
+    "rejectedUnsafeEnvCases": 6
+  },
+  "fullVerifyEvidence": "../T08-20261019/build/build-summary.json",
+  "remoteCi": "NOT RUN"
+}

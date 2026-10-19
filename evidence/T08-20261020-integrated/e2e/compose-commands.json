@@ -1,0 +1,52 @@
+[
+  {
+    "arguments": [
+      "config",
+      "--quiet"
+    ],
+    "exitCode": 0,
+    "log": "compose-0-config.log"
+  },
+  {
+    "arguments": [
+      "up",
+      "-d",
+      "--wait",
+      "--wait-timeout",
+      "180",
+      "mysql",
+      "kafka",
+      "redis"
+    ],
+    "exitCode": 0,
+    "log": "compose-1-up.log"
+  },
+  {
+    "arguments": [
+      "up",
+      "-d",
+      "--build",
+      "--wait",
+      "--wait-timeout",
+      "180"
+    ],
+    "exitCode": 0,
+    "log": "compose-2-up.log"
+  },
+  {
+    "arguments": [
+      "stop",
+      "account-service"
+    ],
+    "exitCode": 0,
+    "log": "compose-3-stop.log"
+  },
+  {
+    "arguments": [
+      "start",
+      "account-service"
+    ],
+    "exitCode": 0,
+    "log": "compose-4-start.log"
+  }
+]

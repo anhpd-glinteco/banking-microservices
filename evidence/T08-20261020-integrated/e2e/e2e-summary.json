@@ -1,0 +1,342 @@
+{
+  "exitCode": 0,
+  "project": "bank-th4-test",
+  "checks": [
+    {
+      "name": "isolated-project",
+      "evidence": {
+        "project": "bank-th4-test",
+        "ports": {
+          "account": "18081",
+          "mysql": 23306,
+          "transfer": "18082",
+          "history": "18084"
+        },
+        "volumeIdentity": "th4-fe9280068457445593ffc0c0cb061695"
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/accounts/users",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/accounts/users",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/accounts/users",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/accounts",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/accounts",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18081/api/accounts/users/3",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "PATCH http://localhost:18081/api/accounts/users/3",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18081/api/accounts/users?page=0&size=1&username=th4_empty&email=th4_empty@example.invalid&sort=createdAt,desc",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18081/api/accounts/users?page=1&size=1&username=th4_empty&sort=id,asc",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18081/api/accounts/users?size=101",
+      "evidence": {
+        "error": {
+          "error": "Bad Request",
+          "status": 400,
+          "path": "/api/accounts/users",
+          "message": "size: must be less than or equal to 100"
+        },
+        "status": 400
+      }
+    },
+    {
+      "name": "DELETE http://localhost:18081/api/accounts/users/1",
+      "evidence": {
+        "error": {
+          "error": "Conflict",
+          "status": 409,
+          "path": "/api/accounts/users/1",
+          "message": "Request conflicts with existing data"
+        },
+        "status": 409
+      }
+    },
+    {
+      "name": "DELETE http://localhost:18081/api/accounts/users/3",
+      "evidence": {
+        "status": 204
+      }
+    },
+    {
+      "name": "GET http://localhost:18081/api/accounts/users/3",
+      "evidence": {
+        "error": {
+          "error": "Not Found",
+          "status": 404,
+          "path": "/api/accounts/users/3",
+          "message": "Requested resource was not found"
+        },
+        "status": 404
+      }
+    },
+    {
+      "name": "profile-crud-pagination",
+      "evidence": {
+        "emptyPageTotal": 1,
+        "filteredTotal": 1,
+        "aliceUserRetained": "1",
+        "deletedUserId": 3
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/loans/apply",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "POST http://localhost:18081/api/loans/1/approve",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18082/api/transfers/6e558430-049b-4849-81df-9d35830e0b0f/status",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18084/api/history/number/TH4-A",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18084/api/history/number/TH4-B",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18082/api/transfers/6e558430-049b-4849-81df-9d35830e0b0f/status",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18084/api/history/number/TH4-A",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18084/api/history/number/TH4-B",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18084/api/history/number/TH4-UNRELATED",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "GET http://localhost:18084/api/history/1",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "name": "rest-accepted-kafka-completed",
+      "evidence": {
+        "transferSql": "6e558430-049b-4849-81df-9d35830e0b0f\t1000.00\tSUCCESS",
+        "aliceAfter": 59999000.0,
+        "bobAfter": 1001000.0,
+        "aliceHistoryRows": 3,
+        "bobBefore": 1000000.0,
+        "restStatus": "PROCESSING",
+        "transactionId": "6e558430-049b-4849-81df-9d35830e0b0f",
+        "bobHistoryRows": 3,
+        "aliceBefore": 60000000.0,
+        "eventualStatus": "SUCCESS"
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "error": {
+          "error": "Not Found",
+          "status": 404,
+          "path": "/api/transfers",
+          "message": "Requested resource was not found"
+        },
+        "status": 404
+      }
+    },
+    {
+      "name": "missing-account-404",
+      "evidence": {
+        "transactionCountBefore": 1,
+        "httpStatus": 404,
+        "transactionCountAfter": 1
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "error": {
+          "error": "Bad Request",
+          "status": 400,
+          "path": "/api/transfers",
+          "message": "amount: must be greater than 0"
+        },
+        "status": 400
+      }
+    },
+    {
+      "name": "invalid-amount-400",
+      "evidence": {
+        "transactionCountBefore": 1,
+        "httpStatus": 400,
+        "transactionCountAfter": 1
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "error": {
+          "error": "Bad Request",
+          "status": 400,
+          "path": "/api/transfers",
+          "message": "Request body is missing or malformed"
+        },
+        "status": 400
+      }
+    },
+    {
+      "name": "null-request-400",
+      "evidence": {
+        "transactionCountBefore": 1,
+        "httpStatus": 400,
+        "transactionCountAfter": 1
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "error": {
+          "error": "Bad Request",
+          "status": 400,
+          "path": "/api/transfers",
+          "message": "amount: must not be null"
+        },
+        "status": 400
+      }
+    },
+    {
+      "name": "null-amount-400",
+      "evidence": {
+        "transactionCountBefore": 1,
+        "httpStatus": 400,
+        "transactionCountAfter": 1
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "error": {
+          "error": "Bad Request",
+          "status": 400,
+          "path": "/api/transfers",
+          "message": "fromAccountNumber: must not be blank"
+        },
+        "status": 400
+      }
+    },
+    {
+      "name": "blank-account-400",
+      "evidence": {
+        "transactionCountBefore": 1,
+        "httpStatus": 400,
+        "transactionCountAfter": 1
+      }
+    },
+    {
+      "name": "POST http://localhost:18082/api/transfers",
+      "evidence": {
+        "error": {
+          "error": "Service Unavailable",
+          "status": 503,
+          "path": "/api/transfers",
+          "message": "Account service unavailable"
+        },
+        "status": 503
+      }
+    },
+    {
+      "name": "account-unavailable-503-unique-request",
+      "evidence": {
+        "transactionCountBefore": 1,
+        "httpStatus": 503,
+        "transactionCountAfter": 1
+      }
+    },
+    {
+      "name": "database-ownership",
+      "evidence": {
+        "crossSchemaForeignKeys": 0,
+        "crossSchemaSelectUpdateDenied": 12,
+        "ownTablesReadable": 5
+      }
+    },
+    {
+      "name": "timeout-test-reference",
+      "evidence": {
+        "test": "AccountPreflightTest.readTimeoutIsSafe503",
+        "evidence": "../build/transfer-service-verify.log",
+        "behavior": "bounded HTTP stub; dependency timeout returns safe503 without transaction insert",
+        "module": "transfer-service"
+      }
+    }
+  ]
+}

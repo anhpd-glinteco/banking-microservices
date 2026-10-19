@@ -1,0 +1,151 @@
+[
+  {
+    "name": "common-install",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f bank-common/pom.xml install",
+    "exitCode": 0,
+    "tests": {
+      "reports": 0,
+      "counts": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": true
+    },
+    "log": "common-install.log"
+  },
+  {
+    "name": "account-service-verify",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f account-service/pom.xml verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 4,
+      "counts": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": false
+    },
+    "log": "account-service-verify.log"
+  },
+  {
+    "name": "transfer-service-verify",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f transfer-service/pom.xml verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 1,
+      "counts": {
+        "tests": 27,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": false
+    },
+    "log": "transfer-service-verify.log"
+  },
+  {
+    "name": "transaction-history-service-verify",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f transaction-history-service/pom.xml verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 1,
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": false
+    },
+    "log": "transaction-history-service-verify.log"
+  },
+  {
+    "name": "notification-service-verify",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f notification-service/pom.xml verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 0,
+      "counts": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": true
+    },
+    "log": "notification-service-verify.log"
+  },
+  {
+    "name": "api-gateway-verify",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f api-gateway/pom.xml verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 0,
+      "counts": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": true
+    },
+    "log": "api-gateway-verify.log"
+  },
+  {
+    "name": "discovery-service-verify",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f discovery-service/pom.xml verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 0,
+      "counts": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": true
+    },
+    "log": "discovery-service-verify.log"
+  },
+  {
+    "name": "account-mysql-it",
+    "command": "mvn -B -ntp -Dmaven.repo.local=/mnt/d/Codex/work/bank-th4-m2 -f account-service/pom.xml -Pmysql-it verify",
+    "exitCode": 0,
+    "tests": {
+      "reports": 3,
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "buildOnly": false
+    },
+    "log": "account-mysql-it.log"
+  },
+  {
+    "name": "frontend-ci",
+    "command": "npm ci --prefix frontend",
+    "exitCode": 0,
+    "tests": null,
+    "log": "frontend-ci.log"
+  },
+  {
+    "name": "frontend-lint",
+    "command": "npm run lint --prefix frontend",
+    "exitCode": 0,
+    "tests": null,
+    "log": "frontend-lint.log"
+  },
+  {
+    "name": "frontend-build",
+    "command": "npm run build --prefix frontend",
+    "exitCode": 0,
+    "tests": null,
+    "log": "frontend-build.log"
+  }
+]
