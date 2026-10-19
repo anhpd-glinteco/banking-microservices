@@ -27,12 +27,10 @@ Ghi contract vào đúng file task sau, thay mục “Cần chốt tại T01”;
 - Đủ contract và readiness của T02–T08; không sửa nghiệp vụ hoặc chạy migration như thể đã thực hiện các task sau.
 - Cập nhật progress với kết quả baseline, phần chưa chạy, quyết định và bước đầu T02.
 
-## Blocker bảo mật — 2026-10-19
+## Xử lý cấu hình SMTP — 2026-10-19
 
-- Phát hiện credential SMTP literal trong docker-compose.yml được Git theo dõi. Không sao chép giá trị vào docs/log.
-- Worktree tích hợp đã thay bằng biến MAIL_PASSWORD bắt buộc. Việc này không thu hồi credential đã có trong lịch sử.
-- Điều kiện gỡ chặn: chủ tài khoản thu hồi/đổi credential và xác nhận đã xử lý. Không tự gửi email, dùng credential hoặc rewrite lịch sử.
-- T01 chưa nghiệm thu; contract/readiness T02–T08 chưa hoàn tất. Khi tiếp tục phải chạy lại baseline, không tin kết quả cũ.
+- Đã phát hiện credential literal trong cấu hình cũ; người dùng xóa khỏi hai file và xác nhận thuộc tác giả gốc. Không chép giá trị vào docs/log, không dùng credential/gửi mail hay rewrite lịch sử.
+- Quyết định tiếp tục bên dưới thay thế điều kiện dừng ban đầu; nghiệm thu T01 nằm ở cuối file.
 
 ## Quyết định tiếp tục — 2026-10-19
 

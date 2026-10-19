@@ -33,3 +33,11 @@ Giữ Kafka cho debit/credit; REST chỉ đọc tài khoản từ Account DB. T�
 - Chạy luồng thật Transfer → Account → Account DB và lưu transaction vào Transfer DB; dùng endpoint/curl cụ thể T01 chốt ở đây.
 - Kiểm tra request frontend cũ vẫn được nhận; không đổi response cũ ngoài contract đã chốt.
 - Ghi bằng chứng và bước đầu T04 vào progress.
+
+## Bằng chứng implementation — 2026-10-19
+
+- AccountClient dùng RestClient, timeout2s/3s, encode path, không follow redirect; chỉ200 với đúng accountNumber được chấp nhận. 404 upstream trả404; lỗi khác trả503 cố định. Advice503 ưu tiên common RuntimeException handler.
+- Duplicate lookup giữ nguyên; giao dịch mới kiểm tra đủ hai tài khoản trước mọi save/event. Chỉ bỏ hai Kafka exception imports Account prerequisite; không đổi debit/credit.
+- Coordinator đọc toàn bộ diff, tích hợp commit efb160f và chạy Maven verify lại sau T02 config: 26 test,0 failures/errors/skips, exit0. Tests dùng HTTP server JDK thật + MockMvc controller/service, repository/producer mocked; kiểm tra valid/order, duplicate, 404, timeout/refused, HTTP khác, payload lỗi và không save/event khi lỗi.
+- Common install và verify Account/Transfer/History sau tích hợp đều exit0; Account/History chưa có test. Log waveA-*.log dưới D:\Codex\outputs\bank-th4.
+- Transfer→Account→MySQL và persistence Transfer/Kafka thực tế: NOT RUN do không có môi trường fixture. Mock repository không phải chứng minh DB; còn thiếu tiêu chí này trước nghiệm thu.
