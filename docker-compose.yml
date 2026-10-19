@@ -94,8 +94,8 @@ services:
     environment:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
-      - MAIL_USERNAME=sonvipkl04@gmail.com
-      - MAIL_PASSWORD=joud eipf fkyo ylde
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
 
   transaction-history-service:
     build: ./transaction-history-service
