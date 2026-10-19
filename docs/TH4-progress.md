@@ -2,21 +2,21 @@
 
 ## Trạng thái hiện tại
 
-- T01 đã bắt đầu và dừng ở blocker bảo mật; chưa task TH4 nào được nghiệm thu DONE.
+- T01 DONE: baseline Java17/Node22 và contract đã kiểm tra; Wave A T02 + T03 đang làm.
 - Chế độ: coordinator tự điều phối full DAG, chạy tiếp qua các task; không cần user gọi từng task.
-- Task đang làm: **T01**. Chưa chạy task phụ thuộc.
+- Task đang làm: **T02 + T03** ở worktree riêng. Docker chưa hoạt động; kiểm chứng DB thật chưa chạy.
 - Chọn wave theo quy tắc trong [AGENTS.md](../AGENTS.md) và phụ thuộc ở [plan](TH4-plan.md).
 
 | ID | Trạng thái | Kết quả hoặc điều kiện tiếp tục |
 | --- | --- | --- |
-| T01 | IN_PROGRESS | Người dùng xác nhận credential của tác giả gốc đã xóa và yêu cầu tiếp tục; đang chạy lại baseline/chốt contract |
-| T02 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
-| T03 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
-| T04 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
-| T05 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
-| T06 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
-| T07 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
-| T08 | TODO | Chưa sẵn sàng; chờ contract T01 và phụ thuộc DONE |
+| T01 | DONE | bank-common install + 6 service verify exit 0 (chưa có test); Node22 ci/lint/build exit 0; đủ 7 contract |
+| T02 | IN_PROGRESS | Wave A: cấu hình DB riêng và quy trình bảo toàn dữ liệu; Docker integration NOT RUN |
+| T03 | IN_PROGRESS | Wave A: REST preflight và kiểm thử lỗi; DB thật NOT RUN |
+| T04 | TODO | Contract sẵn sàng; chờ phụ thuộc DONE |
+| T05 | TODO | Contract sẵn sàng; chờ phụ thuộc DONE |
+| T06 | TODO | Contract sẵn sàng; chờ phụ thuộc DONE |
+| T07 | TODO | Contract sẵn sàng; chờ phụ thuộc DONE |
+| T08 | TODO | Contract sẵn sàng; chờ phụ thuộc DONE |
 
 ## Bàn giao gần nhất
 

@@ -44,3 +44,11 @@ Người dùng xác nhận credential thuộc người khởi tạo project, đ�
 - T03 bỏ hai import Kafka exception trong AccountService để common handler trả 404/409 trước integration test; giải quyết phụ thuộc ngược T03→T04. T04 kiểm tra lại, không cần đổi nghiệp vụ Account tại T03.
 - CRUD minh chứng chọn User profile chỉ xóa khi không có account; giữ toàn bộ dữ liệu tài chính. History dùng accountNumber, legacy numeric ID phải resolve REST.
 - MySQL thật cô lập qua Testcontainers/profile mysql-it; môi trường Docker chưa chạy thì ghi NOT RUN, không thay bằng mock/H2 để tuyên bố đạt.
+
+## Nghiệm thu T01 — 2026-10-19
+
+- Java Temurin17.0.20.1+1, Maven3.9.9, Node22.23.3 portable; SHA256 JDK/Node và SHA512 Maven khớp nguồn phát hành.
+- bank-common install và verify sáu service đều exit0, mỗi module chưa có test (0 report XML). Không đồng nghĩa nghiệp vụ đã được kiểm chứng.
+- Sau sửa sáu file frontend, coordinator review toàn bộ diff và chạy lại npm ci/lint/build: exit0; lint0 lỗi/6 cảnh báo hooks. Build cảnh báo Sass/chunk size. Không đổi dependency/rule.
+- Assertion bảy task T02–T08 có contract/readiness và không còn placeholder exit0. Hai import Kafka prerequisite thuộc T03 đã chốt rõ.
+- Logs: D:\Codex\outputs\bank-th4\T01-*.log. Docker engine chưa chạy; integration thuộc T02 trở đi NOT RUN. Người dùng hỏi khả năng làm không Docker; giữ gate thực tế, không đổi mock thành bằng chứng DB.
