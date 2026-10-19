@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchAccount } from '@/services/api';
 import websocketService from '@/services/websocket';
+import toast from 'react-hot-toast';
 import { showNotification } from '@/utils/toast';
 import {
     Layout, Menu, Button, Card, Row, Col, Typography,
@@ -45,14 +46,8 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
         return 'dashboard';
     };
 
-    const [activeTab, setActiveTab] = useState(getTabFromPath());
+    const activeTab = getTabFromPath();
     const [account, setAccount] = useState(initialAccount);
-    const [refreshing, setRefreshing] = useState(false);
-
-    // Sync activeTab with URL changes
-    useEffect(() => {
-        setActiveTab(getTabFromPath());
-    }, [location.pathname]);
 
     // WebSocket connection for realtime balance updates
     useEffect(() => {
@@ -74,7 +69,7 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
                 const amount = data.transactionAmount;
                 const description = data.description || (isCredit ? `Received from ${data.otherPartyName || 'Unknown'}` : `Sent to ${data.otherPartyName || 'Unknown'}`);
 
-                toast((t) => (
+                toast(() => (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
                             background: isCredit ? '#f6ffed' : '#fff1f0',
@@ -121,16 +116,13 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
     // Refresh balance logic (manual)
     const refreshBalance = async () => {
         if (!account?.id) return;
-        setRefreshing(true);
         try {
             const data = await fetchAccount(account.id);
             setAccount(data);
             if (setParentAccount) setParentAccount(data);
             showNotification.success(t('balanceUpdated'));
-        } catch (e) {
+        } catch {
             showNotification.error(t('failedRefresh'));
-        } finally {
-            setRefreshing(false);
         }
     };
 
@@ -163,7 +155,7 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
                         {t('accountSettings')}
                     </Space>
                 ),
-                onClick: () => setActiveTab('settings'),
+                onClick: () => navigate('/dashboard/settings'),
             },
             {
                 type: 'divider',

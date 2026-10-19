@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { generateOtp, registerWithOtp, createAccount, checkUserExists } from '@/services/api';
+import { generateOtp, registerWithOtp, checkUserExists } from '@/services/api';
 import LanguageSwitcher from '@/components/LanguageSwitcher/LanguageSwitcher';
 import { showNotification } from '@/utils/toast';
 import './Register.scss';

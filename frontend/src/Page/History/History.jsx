@@ -47,7 +47,7 @@ const History = ({ accountId, accountNumber, isDashboard = false }) => {
                 let details = {};
                 try {
                     details = JSON.parse(log.eventData);
-                } catch (e) {
+                } catch {
                     details = {};
                 }
 
