@@ -6,22 +6,19 @@ import './Dashboard.scss';
 
 const Dashboard = ({ account, user }) => {
     const { t } = useTranslation();
-    const [loans, setLoans] = useState([]);
     const [activeLoans, setActiveLoans] = useState([]);
 
     useEffect(() => {
+        const loadLoans = async () => {
+            try {
+                const data = await getLoansByAccount(account.id);
+                setActiveLoans(data.filter(loan => loan.status === 'ACTIVE'));
+            } catch (error) {
+                console.error('Error loading loans:', error);
+            }
+        };
         loadLoans();
     }, [account.id]);
-
-    const loadLoans = async () => {
-        try {
-            const data = await getLoansByAccount(account.id);
-            setLoans(data);
-            setActiveLoans(data.filter(loan => loan.status === 'ACTIVE'));
-        } catch (error) {
-            console.error('Error loading loans:', error);
-        }
-    };
 
     // Calculate total loan debt
     const totalLoanDebt = activeLoans.reduce((sum, loan) => 

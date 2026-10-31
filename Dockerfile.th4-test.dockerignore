@@ -1,0 +1,10 @@
+**
+!account-service/
+!account-service/target/
+!account-service/target/*.jar
+!transfer-service/
+!transfer-service/target/
+!transfer-service/target/*.jar
+!transaction-history-service/
+!transaction-history-service/target/
+!transaction-history-service/target/*.jar

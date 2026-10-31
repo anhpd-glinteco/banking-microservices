@@ -33,14 +33,11 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: bank
-      MYSQL_USER: bank
-      MYSQL_PASSWORD: bank
     ports:
-      - "3306:3306"
-    volumes:
-      - ./mysql-init:/docker-entrypoint-initdb.d
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+    # Keep the existing anonymous /var/lib/mysql volume; provision explicitly.
 
   discovery-service:
     build: ./discovery-service
@@ -60,54 +57,71 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
 
   account-service:
-    build: ./account-service
+    build:
+      context: .
+      dockerfile: account-service/Dockerfile
     depends_on:
       - discovery-service
       - mysql
       - kafka
       - redis
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bank
-      - SPRING_DATASOURCE_USERNAME=bank
-      - SPRING_DATASOURCE_PASSWORD=bank
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - ACCOUNT_DB_NAME=${ACCOUNT_DB_NAME:-bank_account}
+      - ACCOUNT_DB_USER=${ACCOUNT_DB_USER:-account_app}
+      - ACCOUNT_DB_PASSWORD=${ACCOUNT_DB_PASSWORD:?Set ACCOUNT_DB_PASSWORD}
+      - SPRING_REDIS_HOST=redis
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
 
   transfer-service:
-    build: ./transfer-service
+    build:
+      context: .
+      dockerfile: transfer-service/Dockerfile
     depends_on:
       - discovery-service
       - mysql
       - kafka
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bank
-      - SPRING_DATASOURCE_USERNAME=bank
-      - SPRING_DATASOURCE_PASSWORD=bank
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - TRANSFER_DB_NAME=${TRANSFER_DB_NAME:-bank_transfer}
+      - TRANSFER_DB_USER=${TRANSFER_DB_USER:-transfer_app}
+      - TRANSFER_DB_PASSWORD=${TRANSFER_DB_PASSWORD:?Set TRANSFER_DB_PASSWORD}
+      - ACCOUNT_SERVICE_URL=http://account-service:8081
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
 
   notification-service:
-    build: ./notification-service
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
     depends_on:
       - discovery-service
       - kafka
     environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - MAIL_USERNAME=${MAIL_USERNAME:-}
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
 
   transaction-history-service:
-    build: ./transaction-history-service
+    build:
+      context: .
+      dockerfile: transaction-history-service/Dockerfile
     depends_on:
       - discovery-service
       - mysql
       - kafka
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bank
-      - SPRING_DATASOURCE_USERNAME=bank
-      - SPRING_DATASOURCE_PASSWORD=bank
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - HISTORY_DB_NAME=${HISTORY_DB_NAME:-bank_history}
+      - HISTORY_DB_USER=${HISTORY_DB_USER:-history_app}
+      - HISTORY_DB_PASSWORD=${HISTORY_DB_PASSWORD:?Set HISTORY_DB_PASSWORD}
+      - ACCOUNT_SERVICE_URL=http://account-service:8081
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
 
   frontend:

@@ -1,112 +1,55 @@
 package com.nnson128.account.controller;
 
+import com.nnson128.account.dto.LoanApplicationRequest;
+import com.nnson128.account.dto.LoanRepaymentRequest;
 import com.nnson128.account.entity.Loan;
 import com.nnson128.account.service.LoanService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/loans")
 @RequiredArgsConstructor
-@Slf4j
+@Validated
 @CrossOrigin(origins = "*")
 public class LoanController {
-    
     private final LoanService loanService;
-    
-    /**
-     * Apply for a new loan
-     * POST /api/loans/apply
-     */
+
     @PostMapping("/apply")
-    public ResponseEntity<?> applyForLoan(@RequestBody Map<String, Object> request) {
-        try {
-            Long accountId = Long.valueOf(request.get("accountId").toString());
-            BigDecimal amount = new BigDecimal(request.get("amount").toString());
-            Integer termMonths = Integer.valueOf(request.get("termMonths").toString());
-            String purpose = request.get("purpose").toString();
-            
-            Loan loan = loanService.applyForLoan(accountId, amount, termMonths, purpose);
-            return ResponseEntity.ok(loan);
-        } catch (IllegalArgumentException e) {
-            log.warn("Loan application validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error applying for loan", e);
-            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to process loan application"));
-        }
+    public ResponseEntity<Loan> applyForLoan(@NotNull @Valid @RequestBody LoanApplicationRequest request) {
+        Loan loan = loanService.applyForLoan(request.getAccountId(), request.getAmount(), request.getTermMonths(), request.getPurpose());
+        return ResponseEntity.ok(loan);
     }
-    
-    /**
-     * Get all loans for an account
-     * GET /api/loans/account/{accountId}
-     */
+
     @GetMapping("/account/{accountId}")
-    public ResponseEntity<List<Loan>> getLoansByAccount(@PathVariable Long accountId) {
-        try {
-            List<Loan> loans = loanService.getLoansByAccountId(accountId);
-            return ResponseEntity.ok(loans);
-        } catch (Exception e) {
-            log.error("Error fetching loans for account: {}", accountId, e);
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<List<Loan>> getLoansByAccount(@PathVariable @Positive Long accountId) {
+        return ResponseEntity.ok(loanService.getLoansByAccountId(accountId));
     }
-    
-    /**
-     * Get loan by ID
-     * GET /api/loans/{loanId}
-     */
+
     @GetMapping("/{loanId}")
-    public ResponseEntity<?> getLoanById(@PathVariable Long loanId) {
-        try {
-            Loan loan = loanService.getLoanById(loanId);
-            return ResponseEntity.ok(loan);
-        } catch (Exception e) {
-            log.error("Error fetching loan: {}", loanId, e);
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Loan> getLoanById(@PathVariable @Positive Long loanId) {
+        return ResponseEntity.ok(loanService.getLoanById(loanId));
     }
-    
-    /**
-     * Approve loan (admin function - auto-approve for now)
-     * POST /api/loans/{loanId}/approve
-     */
+
     @PostMapping("/{loanId}/approve")
-    public ResponseEntity<?> approveLoan(@PathVariable Long loanId) {
-        try {
-            Loan loan = loanService.approveLoan(loanId);
-            return ResponseEntity.ok(loan);
-        } catch (IllegalArgumentException e) {
-            log.warn("Loan approval validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error approving loan: {}", loanId, e);
-            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to approve loan"));
-        }
+    public ResponseEntity<Loan> approveLoan(@PathVariable @Positive Long loanId) {
+        return ResponseEntity.ok(loanService.approveLoan(loanId));
     }
-    
-    /**
-     * Make a loan repayment
-     * POST /api/loans/{loanId}/repay
-     */
+
     @PostMapping("/{loanId}/repay")
-    public ResponseEntity<?> makeRepayment(@PathVariable Long loanId, @RequestBody Map<String, Object> request) {
-        try {
-            BigDecimal amount = new BigDecimal(request.get("amount").toString());
-            Loan loan = loanService.makeRepayment(loanId, amount);
-            return ResponseEntity.ok(loan);
-        } catch (IllegalArgumentException e) {
-            log.warn("Loan repayment validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error making loan repayment: {}", loanId, e);
-            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to process repayment"));
-        }
+    public ResponseEntity<Loan> makeRepayment(@PathVariable @Positive Long loanId, @NotNull @Valid @RequestBody LoanRepaymentRequest request) {
+        return ResponseEntity.ok(loanService.makeRepayment(loanId, request.getAmount()));
     }
 }

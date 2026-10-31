@@ -1,0 +1,21 @@
+{
+  "remoteCi": "NOT RUN",
+  "submissionSections": 10,
+  "powershell": {
+    "exitCode": 0,
+    "composeConfig": "PASS",
+    "command": "pwsh -NoProfile -File scripts/th4-self-check.ps1 -EnvFile <fake-env-outside-repo>",
+    "parsers": 5,
+    "unsafeEnvCasesRejected": 6
+  },
+  "runtimeHealthTool": {
+    "exitCode": 0,
+    "command": "command -v wget",
+    "output": "/usr/bin/wget",
+    "image": "eclipse-temurin:17-jre-alpine"
+  },
+  "actionlint": {
+    "command": "actionlint.exe .github/workflows/ci.yml",
+    "exitCode": 0
+  }
+}
