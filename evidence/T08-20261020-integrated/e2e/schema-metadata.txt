@@ -1,0 +1,57 @@
+bank_account	accounts	id	bigint	NO	PRI
+bank_account	accounts	account_name	varchar(255)	YES	
+bank_account	accounts	account_number	varchar(255)	NO	UNI
+bank_account	accounts	balance	decimal(15,2)	NO	
+bank_account	accounts	created_at	datetime(6)	YES	
+bank_account	accounts	updated_at	datetime(6)	YES	
+bank_account	accounts	user_id	bigint	NO	MUL
+bank_account	loans	id	bigint	NO	PRI
+bank_account	loans	account_id	bigint	NO	
+bank_account	loans	approved_at	datetime(6)	YES	
+bank_account	loans	created_at	datetime(6)	YES	
+bank_account	loans	disbursed_at	datetime(6)	YES	
+bank_account	loans	interest_rate	decimal(5,2)	NO	
+bank_account	loans	loan_amount	decimal(15,2)	NO	
+bank_account	loans	monthly_payment	decimal(15,2)	YES	
+bank_account	loans	purpose	varchar(255)	NO	
+bank_account	loans	remaining_amount	decimal(15,2)	NO	
+bank_account	loans	status	enum('ACTIVE','APPROVED','DEFAULTED','PAID_OFF','PENDING','REJECTED')	NO	
+bank_account	loans	term_months	int	NO	
+bank_account	loans	updated_at	datetime(6)	YES	
+bank_account	users	id	bigint	NO	PRI
+bank_account	users	created_at	datetime(6)	YES	
+bank_account	users	email	varchar(255)	NO	UNI
+bank_account	users	full_name	varchar(255)	YES	
+bank_account	users	identification_number	varchar(255)	YES	
+bank_account	users	password	varchar(255)	YES	
+bank_account	users	phone	varchar(255)	YES	
+bank_account	users	updated_at	datetime(6)	YES	
+bank_account	users	username	varchar(255)	NO	UNI
+bank_history	transaction_history	id	bigint	NO	PRI
+bank_history	transaction_history	event_data	longtext	YES	
+bank_history	transaction_history	event_id	varchar(255)	YES	UNI
+bank_history	transaction_history	event_type	varchar(255)	YES	
+bank_history	transaction_history	from_account_number	varchar(255)	YES	MUL
+bank_history	transaction_history	timestamp	datetime(6)	YES	
+bank_history	transaction_history	to_account_number	varchar(255)	YES	MUL
+bank_history	transaction_history	transaction_id	varchar(255)	YES	MUL
+bank_transfer	transactions	id	varchar(255)	NO	PRI
+bank_transfer	transactions	amount	decimal(15,2)	YES	
+bank_transfer	transactions	created_at	datetime(6)	YES	
+bank_transfer	transactions	description	varchar(255)	YES	
+bank_transfer	transactions	failure_reason	varchar(255)	YES	
+bank_transfer	transactions	from_account_number	varchar(255)	YES	
+bank_transfer	transactions	retry_count	int	NO	
+bank_transfer	transactions	status	varchar(255)	YES	
+bank_transfer	transactions	to_account_number	varchar(255)	YES	
+bank_transfer	transactions	updated_at	datetime(6)	YES	
+bank_account	accounts	account_number	NULL	NULL	NULL
+bank_account	accounts	id	NULL	NULL	NULL
+bank_account	accounts	user_id	bank_account	users	id
+bank_account	loans	id	NULL	NULL	NULL
+bank_account	users	email	NULL	NULL	NULL
+bank_account	users	id	NULL	NULL	NULL
+bank_account	users	username	NULL	NULL	NULL
+bank_history	transaction_history	event_id	NULL	NULL	NULL
+bank_history	transaction_history	id	NULL	NULL	NULL
+bank_transfer	transactions	id	NULL	NULL	NULL

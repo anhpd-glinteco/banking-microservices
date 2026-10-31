@@ -5,6 +5,7 @@ import com.nnson128.common.event.TransactionCreatedEvent;
 import com.nnson128.common.event.TransferCompletedEvent;
 import com.nnson128.common.event.TransferFailedEvent;
 import com.nnson128.transfer.entity.Transaction;
+import com.nnson128.transfer.client.AccountClient;
 import com.nnson128.transfer.kafka.TransferKafkaProducer;
 import com.nnson128.transfer.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransferService {
     private final TransactionRepository transactionRepository;
     private final TransferKafkaProducer kafkaProducer;
+    private final AccountClient accountClient;
 
     public Transaction initiateTransfer(TransferRequestDTO request) {
+        if (request == null || request.getFromAccountNumber() == null || request.getFromAccountNumber().isBlank()
+                || request.getFromAccountNumber().length() > 255
+                || request.getToAccountNumber() == null || request.getToAccountNumber().isBlank()
+                || request.getToAccountNumber().length() > 255
+                || request.getFromAccountNumber().equals(request.getToAccountNumber())
+                || request.getAmount() == null || request.getAmount().signum() <= 0
+                || request.getAmount().scale() > 2 || request.getAmount().precision() - request.getAmount().scale() > 13
+                || (request.getDescription() != null && request.getDescription().length() > 255)) {
+            throw new IllegalArgumentException("Transfer fields are invalid");
+        }
         // Check for duplicate request (idempotency)
         Transaction existingTx = transactionRepository.findPendingOrProcessingTransaction(
             request.getFromAccountNumber(), 
@@ -31,6 +43,9 @@ public class TransferService {
             log.warn("Duplicate transfer request detected, returning existing transaction: {}", existingTx.getId());
             return existingTx;
         }
+
+        accountClient.requireAccount(request.getFromAccountNumber());
+        accountClient.requireAccount(request.getToAccountNumber());
 
         Transaction tx = Transaction.builder()
                 .fromAccountNumber(request.getFromAccountNumber())

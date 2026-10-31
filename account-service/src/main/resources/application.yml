@@ -5,9 +5,9 @@ spring:
   application:
     name: account-service
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bank}
-    username: ${DB_USER:bank}
-    password: ${DB_PASSWORD:bank}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${ACCOUNT_DB_NAME:bank_account}
+    username: ${ACCOUNT_DB_USER:account_app}
+    password: ${ACCOUNT_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

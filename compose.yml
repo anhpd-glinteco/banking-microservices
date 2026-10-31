@@ -74,17 +74,15 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: bank
-      MYSQL_USER: bank
-      MYSQL_PASSWORD: bank
     ports:
-      - "3306:3306"
+      - "${MYSQL_HOST_PORT:-3306}:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
       # - ./database.sql:/docker-entrypoint-initdb.d/database.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -134,9 +132,9 @@ services:
     restart: unless-stopped
     ports:
       - "8083:8083"
-    env_file:
-      - ./.env
     environment:
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
@@ -158,11 +156,15 @@ services:
     ports:
       - "8081:8081"
     environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - ACCOUNT_DB_NAME=${ACCOUNT_DB_NAME:-bank_account}
+      - ACCOUNT_DB_USER=${ACCOUNT_DB_USER:-account_app}
+      - ACCOUNT_DB_PASSWORD=${ACCOUNT_DB_PASSWORD:?Set ACCOUNT_DB_PASSWORD}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - DB_HOST=mysql
     depends_on:
       discovery-service:
         condition: service_healthy
@@ -185,12 +187,15 @@ services:
     restart: unless-stopped
     ports:
       - "8082:8082"
-    env_file:
-      - ./.env
     environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - TRANSFER_DB_NAME=${TRANSFER_DB_NAME:-bank_transfer}
+      - TRANSFER_DB_USER=${TRANSFER_DB_USER:-transfer_app}
+      - TRANSFER_DB_PASSWORD=${TRANSFER_DB_PASSWORD:?Set TRANSFER_DB_PASSWORD}
+      - ACCOUNT_SERVICE_URL=http://account-service:8081
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - DB_HOST=mysql
     depends_on:
       discovery-service:
         condition: service_healthy
@@ -211,12 +216,15 @@ services:
     restart: unless-stopped
     ports:
       - "8084:8084"
-    env_file:
-      - ./.env
     environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - HISTORY_DB_NAME=${HISTORY_DB_NAME:-bank_history}
+      - HISTORY_DB_USER=${HISTORY_DB_USER:-history_app}
+      - HISTORY_DB_PASSWORD=${HISTORY_DB_PASSWORD:?Set HISTORY_DB_PASSWORD}
+      - ACCOUNT_SERVICE_URL=http://account-service:8081
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - DB_HOST=mysql
     depends_on:
       discovery-service:
         condition: service_healthy

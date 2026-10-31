@@ -1,0 +1,156 @@
+name: bank-th4-test
+services:
+  mysql:
+    image: mysql:8.0.46
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-13306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'MYSQL_PWD="$${MYSQL_ROOT_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --user=root --batch --skip-column-names --execute="SELECT 1"'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  kafka:
+    image: apache/kafka:4.0.1
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:${KAFKA_HOST_PORT:-39092}
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "127.0.0.1:${KAFKA_HOST_PORT:-39092}:9094"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+  redis:
+    image: redis:7.4.2
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-16379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  account-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th4-test
+      args:
+        SERVICE: account-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      ACCOUNT_DB_NAME: bank_account
+      ACCOUNT_DB_USER: account_app
+      ACCOUNT_DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?Set ACCOUNT_DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+    ports:
+      - "127.0.0.1:${ACCOUNT_HOST_PORT:-18081}:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+  transfer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th4-test
+      args:
+        SERVICE: transfer-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      TRANSFER_DB_NAME: bank_transfer
+      TRANSFER_DB_USER: transfer_app
+      TRANSFER_DB_PASSWORD: ${TRANSFER_DB_PASSWORD:?Set TRANSFER_DB_PASSWORD}
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+    ports:
+      - "127.0.0.1:${TRANSFER_HOST_PORT:-18082}:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      account-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+  transaction-history-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th4-test
+      args:
+        SERVICE: transaction-history-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      HISTORY_DB_NAME: bank_history
+      HISTORY_DB_USER: history_app
+      HISTORY_DB_PASSWORD: ${HISTORY_DB_PASSWORD:?Set HISTORY_DB_PASSWORD}
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+    ports:
+      - "127.0.0.1:${HISTORY_HOST_PORT:-18084}:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      account-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8084/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+volumes:
+  mysql-data:
+    name: ${TH4_FIXTURE_ID:?Set TH4_FIXTURE_ID}-mysql
+  kafka-data:
+    name: ${TH4_FIXTURE_ID:?Set TH4_FIXTURE_ID}-kafka
+  redis-data:
+    name: ${TH4_FIXTURE_ID:?Set TH4_FIXTURE_ID}-redis

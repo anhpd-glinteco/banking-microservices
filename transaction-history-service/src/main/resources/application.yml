@@ -1,13 +1,23 @@
 server:
   port: 8084
 
+account:
+  service:
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+    connect-timeout-ms: ${ACCOUNT_SERVICE_CONNECT_TIMEOUT_MS:2000}
+    read-timeout-ms: ${ACCOUNT_SERVICE_READ_TIMEOUT_MS:3000}
+
+history:
+  backfill:
+    enabled: ${HISTORY_BACKFILL_ENABLED:false}
+
 spring:
   application:
     name: transaction-history-service
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bank}
-    username: ${DB_USER:bank}
-    password: ${DB_PASSWORD:bank}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${HISTORY_DB_NAME:bank_history}
+    username: ${HISTORY_DB_USER:history_app}
+    password: ${HISTORY_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

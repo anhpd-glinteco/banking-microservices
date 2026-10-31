@@ -1,0 +1,30 @@
+{
+  "checks": 11,
+  "allExitCodesZero": true,
+  "reports": {
+    "account-service/surefire": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "transfer-service/surefire": {
+      "tests": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "transaction-history-service/surefire": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "account-service/failsafe": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  }
+}

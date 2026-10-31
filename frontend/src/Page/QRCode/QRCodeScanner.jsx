@@ -11,7 +11,6 @@ const QRCodeScanner = ({ account, onTransfer }) => {
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [loading, setLoading] = useState(false);
-    const [uploadMode, setUploadMode] = useState(false);
 
     useEffect(() => {
         let scanner = null;
@@ -39,12 +38,12 @@ const QRCodeScanner = ({ account, onTransfer }) => {
                 } else {
                     toast.error(t('invalidQRFormat'));
                 }
-            } catch (e) {
+            } catch {
                 toast.error(t('invalidQRCode'));
             }
         }
 
-        function onScanError(error) {
+        function onScanError() {
             // Ignore scan errors (they happen frequently during scanning)
         }
 
@@ -64,11 +63,6 @@ const QRCodeScanner = ({ account, onTransfer }) => {
         setScanning(false);
     };
 
-    const handleManualInput = () => {
-        setScanning(false);
-        setScannedData({ accountNumber: '', accountName: t('manualEntry') });
-    };
-
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -83,12 +77,11 @@ const QRCodeScanner = ({ account, onTransfer }) => {
                     setScannedData(data);
                     setAmount(data.amount || '');
                     setDescription(data.description || '');
-                    setUploadMode(false);
                     toast.success(t('qrScannedSuccess'));
                 } else {
                     toast.error(t('invalidQRFormat'));
                 }
-            } catch (parseError) {
+            } catch {
                 toast.error(t('invalidQRCode'));
             }
         } catch (error) {

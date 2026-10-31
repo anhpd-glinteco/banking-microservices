@@ -22,7 +22,7 @@ const getTransactionTitle = (type, description, eventType, t) => {
     }
 };
 
-const History = ({ accountId, accountNumber, isDashboard = false }) => {
+const History = ({ accountNumber, isDashboard = false }) => {
     const { t } = useTranslation();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,12 +33,16 @@ const History = ({ accountId, accountNumber, isDashboard = false }) => {
     const [pageSize, setPageSize] = useState(isDashboard ? 5 : 10);
 
     const loadHistory = async () => {
-        if (!accountId) return;
+        if (!accountNumber) {
+            setTransactions([]);
+            setLoading(false);
+            return;
+        }
 
         setLoading(true);
         setError('');
         try {
-            const data = await fetchHistory(accountId);
+            const data = await fetchHistory(accountNumber);
 
             const transactionMap = new Map();
 
@@ -47,12 +51,13 @@ const History = ({ accountId, accountNumber, isDashboard = false }) => {
                 let details = {};
                 try {
                     details = JSON.parse(log.eventData);
-                } catch (e) {
+                } catch {
                     details = {};
                 }
 
                 // Determine transaction type based on account number
-                const isCredit = details.toAccountId === accountNumber;
+                const isCredit = log.eventType === 'COMPENSATION' ||
+                    log.toAccountNumber === accountNumber || details.toAccountId === accountNumber;
                 const amount = details.amount || 0;
                 const txId = log.transactionId || log.id; // Fallback to log ID if txId missing
 
@@ -64,7 +69,7 @@ const History = ({ accountId, accountNumber, isDashboard = false }) => {
                     desc: getTransactionTitle(isCredit ? 'credit' : 'debit', details.description, log.eventType, t),
                     amount: amount,
                     type: isCredit ? 'credit' : 'debit',
-                    status: details.status || 'COMPLETED',
+                    status: details.status || (log.eventType === 'TRANSFER_FAILED' ? 'FAILED' : 'COMPLETED'),
                     timestamp: new Date(log.timestamp)
                 };
 
@@ -127,7 +132,7 @@ const History = ({ accountId, accountNumber, isDashboard = false }) => {
         // Auto-refresh every 30 seconds
         const interval = setInterval(loadHistory, 30000);
         return () => clearInterval(interval);
-    }, [accountId, accountNumber]);
+    }, [accountNumber]);
 
     return (
         <div className="history-card">
