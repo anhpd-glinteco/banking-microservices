@@ -18,10 +18,7 @@ bank-common
 6. transfer
 
 ```
-mvn -B -ntp -f bank-common/pom.xml install
 
-TH4 database ownership, required environment variables, backup/copy/restore guards and
-checks: [docs/database-migration.md](docs/database-migration.md).
 
 ## Project origin
 
