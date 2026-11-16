@@ -13,8 +13,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+@org.springframework.security.test.context.support.WithMockUser(username = "1", roles = "ADMIN")
 @WebMvcTest(AccountController.class)
+@org.springframework.context.annotation.Import(com.nnson128.account.security.AccountSecurityConfiguration.class)
 class UserProfileCrudTest {
+  @MockBean java.security.interfaces.RSAPublicKey jwtPublicKey;
+  @MockBean org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder;
   @Autowired MockMvc mvc;
   @MockBean AccountService service;
 

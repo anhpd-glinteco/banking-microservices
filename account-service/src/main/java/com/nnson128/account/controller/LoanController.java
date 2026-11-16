@@ -11,7 +11,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,24 +22,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/loans")
 @RequiredArgsConstructor
 @Validated
-@CrossOrigin(origins = "*")
 public class LoanController {
     private final LoanService loanService;
+    private final com.nnson128.account.service.AccountService accountService;
 
     @PostMapping("/apply")
     public ResponseEntity<Loan> applyForLoan(@NotNull @Valid @RequestBody LoanApplicationRequest request) {
+        accountService.requireAccountOwner(request.getAccountId(), false);
         Loan loan = loanService.applyForLoan(request.getAccountId(), request.getAmount(), request.getTermMonths(), request.getPurpose());
         return ResponseEntity.ok(loan);
     }
 
     @GetMapping("/account/{accountId}")
     public ResponseEntity<List<Loan>> getLoansByAccount(@PathVariable @Positive Long accountId) {
+        accountService.requireAccountOwner(accountId, true);
         return ResponseEntity.ok(loanService.getLoansByAccountId(accountId));
     }
 
     @GetMapping("/{loanId}")
     public ResponseEntity<Loan> getLoanById(@PathVariable @Positive Long loanId) {
-        return ResponseEntity.ok(loanService.getLoanById(loanId));
+        Loan loan = loanService.getLoanById(loanId);
+        accountService.requireAccountOwner(loan.getAccountId(), true);
+        return ResponseEntity.ok(loan);
     }
 
     @PostMapping("/{loanId}/approve")
@@ -50,6 +53,8 @@ public class LoanController {
 
     @PostMapping("/{loanId}/repay")
     public ResponseEntity<Loan> makeRepayment(@PathVariable @Positive Long loanId, @NotNull @Valid @RequestBody LoanRepaymentRequest request) {
+        Loan loan = loanService.getLoanById(loanId);
+        accountService.requireAccountOwner(loan.getAccountId(), false);
         return ResponseEntity.ok(loanService.makeRepayment(loanId, request.getAmount()));
     }
 }

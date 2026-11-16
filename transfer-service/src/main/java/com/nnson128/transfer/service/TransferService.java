@@ -32,6 +32,8 @@ public class TransferService {
                 || (request.getDescription() != null && request.getDescription().length() > 255)) {
             throw new IllegalArgumentException("Transfer fields are invalid");
         }
+        accountClient.requireSender(request.getFromAccountNumber());
+
         // Check for duplicate request (idempotency)
         Transaction existingTx = transactionRepository.findPendingOrProcessingTransaction(
             request.getFromAccountNumber(), 
@@ -44,7 +46,6 @@ public class TransferService {
             return existingTx;
         }
 
-        accountClient.requireAccount(request.getFromAccountNumber());
         accountClient.requireAccount(request.getToAccountNumber());
 
         Transaction tx = Transaction.builder()
@@ -97,6 +98,9 @@ public class TransferService {
     }
 
     public Transaction getTransactionStatus(String transactionId) {
-        return transactionRepository.findById(transactionId).orElse(null);
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new com.nnson128.common.exception.ResourceNotFoundException("Transaction not found"));
+        accountClient.requireParticipant(transaction);
+        return transaction;
     }
 }

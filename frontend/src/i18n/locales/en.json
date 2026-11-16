@@ -1,4 +1,7 @@
 {
+  "loanSubmittedSuccess": "Loan application submitted for approval.",
+  "approveLoan": "Approve loan",
+
   "welcome": "Welcome Back",
   "signIn": "Sign in to your account",
   "username": "Username",
@@ -51,6 +54,8 @@
   "recipientNotFound": "Recipient account not found",
   "sender": "Sender",
   "status": "Status",
+  "failed": "Failed",
+  "requestedAmount": "Requested amount",
   "noTransactions": "No transactions yet",
   "generateQR": "Generate QR Code for Payment",
   "yourAccountQR": "Your Account QR Code",
@@ -152,7 +157,7 @@
   "medical": "Medical",
   "debtConsolidation": "Debt Consolidation",
   "other": "Other",
-  "loanInfoMessage": "Your loan application will be reviewed and approved automatically for demo purposes. Funds will be disbursed to your account immediately.",
+  "loanInfoMessage": "Your application is submitted for review. Funds are disbursed after an administrator approves it.",
   "submitApplication": "Submit Application",
   "yourLoans": "Your Loans",
   "loadingLoans": "Loading loans...",

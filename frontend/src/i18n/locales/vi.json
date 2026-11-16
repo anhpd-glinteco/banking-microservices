@@ -1,4 +1,7 @@
 {
+  "loanSubmittedSuccess": "Đã gửi hồ sơ vay, chờ xét duyệt.",
+  "approveLoan": "Duyệt khoản vay",
+
   "welcome": "Chào Mừng Trở Lại",
   "signIn": "Đăng nhập vào tài khoản của bạn",
   "username": "Tên đăng nhập",
@@ -54,6 +57,8 @@
   "recipientNotFound": "Không tìm thấy tài khoản người nhận",
   "sender": "Người Gửi",
   "status": "Trạng Thái",
+  "failed": "Thất bại",
+  "requestedAmount": "Số tiền yêu cầu",
   "noTransactions": "Chưa có giao dịch nào",
   "generateQR": "Tạo Mã QR Để Nhận Tiền",
   "yourAccountQR": "Mã QR Tài Khoản Của Bạn",
@@ -153,7 +158,7 @@
   "medical": "Y Tế",
   "debtConsolidation": "Hợp Nhất Nợ",
   "other": "Khác",
-  "loanInfoMessage": "Đơn vay của bạn sẽ được xem xét và tự động phê duyệt cho mục đích demo. Tiền sẽ được chuyển vào tài khoản ngay lập tức.",
+  "loanInfoMessage": "Hồ sơ vay được gửi ở trạng thái chờ xét duyệt. Tiền chỉ được giải ngân sau khi quản trị viên phê duyệt.",
   "submitApplication": "Gửi Đơn",
   "yourLoans": "Các Khoản Vay Của Bạn",
   "loadingLoans": "Đang tải khoản vay...",

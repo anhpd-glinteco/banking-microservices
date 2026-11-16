@@ -36,6 +36,10 @@ public abstract class MysqlIntegrationSupport {
     properties.add("spring.datasource.password", MYSQL::getPassword);
   }
 
+  // These persistence tests do not exercise HTTP JWT verification; security has dedicated tests.
+  @MockBean java.security.interfaces.RSAPublicKey jwtPublicKey;
+  @MockBean org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder;
+  @MockBean com.nnson128.account.security.TokenService tokenService;
   @MockBean AccountKafkaProducer producer;
   @MockBean OtpService otp;
 }

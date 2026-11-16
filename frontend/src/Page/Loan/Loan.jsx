@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { InputNumber } from 'antd';
 import './Loan.scss';
 
-const Loan = ({ account, onRefreshAccount }) => {
+const Loan = ({ account, role, onRefreshAccount }) => {
     const { t } = useTranslation();
     const [activeView, setActiveView] = useState('apply'); // 'apply' or 'myLoans'
     const [loans, setLoans] = useState([]);
@@ -37,7 +37,7 @@ const Loan = ({ account, onRefreshAccount }) => {
             const data = await getLoansByAccount(account.id);
             setLoans(data);
         } catch (error) {
-            toast.error(t('failedToLoadLoans'));
+            toast.error(error.response?.status === 403 ? error.message : t('failedToLoadLoans'));
             console.error('Error loading loans:', error);
         } finally {
             setLoading(false);
@@ -78,12 +78,8 @@ const Loan = ({ account, onRefreshAccount }) => {
                 purpose: purpose
             };
 
-            const newLoan = await applyForLoan(loanData);
-
-            // Auto-approve for demo purposes
-            await approveLoan(newLoan.id);
-
-            toast.success(t('loanApprovedSuccess'), { id: toastId });
+            await applyForLoan(loanData);
+            toast.success(t('loanSubmittedSuccess'), { id: toastId });
 
             // Clear form
             setLoanAmount('');
@@ -102,8 +98,24 @@ const Loan = ({ account, onRefreshAccount }) => {
             if (error.response?.status === 400) {
                 toast.error(t('maximumLoansReached'), { id: toastId });
             } else {
-                toast.error(t('loanApplicationFailed'), { id: toastId });
+                toast.error(error.response?.status === 403 ? error.message : t('loanApplicationFailed'), { id: toastId });
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApprove = async (loanId) => {
+        if (role !== 'ADMIN') return;
+        setLoading(true);
+        const toastId = toast.loading(t('processing'));
+        try {
+            await approveLoan(loanId);
+            toast.success(t('loanApprovedSuccess'), { id: toastId });
+            await loadLoans();
+            if (onRefreshAccount) onRefreshAccount();
+        } catch (error) {
+            toast.error(error.message, { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -128,7 +140,7 @@ const Loan = ({ account, onRefreshAccount }) => {
             setRepaymentAmount('');
             loadLoans();
         } catch (error) {
-            const errorMsg = error.response?.data?.error || t('repaymentFailed');
+            const errorMsg = error.response?.status === 403 ? error.message : error.response?.data?.error || t('repaymentFailed');
             toast.error(errorMsg, { id: toastId });
         } finally {
             setLoading(false);
@@ -295,6 +307,11 @@ const Loan = ({ account, onRefreshAccount }) => {
                                         </div>
                                     </div>
 
+                                    {role === 'ADMIN' && loan.status === 'PENDING' && (
+                                        <button type="button" className="submit-btn" disabled={loading} onClick={() => handleApprove(loan.id)}>
+                                            {t('approveLoan')}
+                                        </button>
+                                    )}
                                     {loan.status === 'ACTIVE' && (
                                         <div className="loan-actions">
                                             {selectedLoan?.id === loan.id ? (

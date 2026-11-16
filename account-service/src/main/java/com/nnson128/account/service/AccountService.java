@@ -25,6 +25,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 @Slf4j
 public class AccountService {
 
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final com.nnson128.account.security.TokenService tokenService;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final AccountKafkaProducer kafkaProducer;
@@ -181,7 +183,7 @@ public class AccountService {
     @Transactional
     public UserProfile createUser(CreateUserRequest request) {
         User user = User.builder()
-                .username(request.username()).email(request.email()).password(request.password())
+                .username(request.username()).email(request.email()).password(passwordEncoder.encode(request.password()))
                 .fullName(request.fullName()).phone(request.phone())
                 .identificationNumber(request.identificationNumber()).build();
         try {
@@ -235,6 +237,19 @@ public class AccountService {
         return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
+    public void requireAccountOwner(Long id, boolean allowAdmin) {
+        AccountBank account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        if (allowAdmin) com.nnson128.common.security.SecurityIdentity.requireOwnerOrAdmin(account.getUser().getId());
+        else com.nnson128.common.security.SecurityIdentity.requireOwner(account.getUser().getId());
+    }
+
+    public AccountLookup lookup(String number) {
+        AccountBank account = accountRepository.findByAccountNumber(number)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        return new AccountLookup(account.getAccountNumber(), account.getAccountName());
+    }
+
     public AccountDTO getAccount(Long id) {
         AccountBank account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -267,7 +282,8 @@ public class AccountService {
         otpService.generateOtp(email);
     }
 
-    public User registerWithOtp(RegisterRequest request) {
+    @Transactional
+    public UserProfile registerWithOtp(RegisterRequest request) {
         if (!otpService.validateOtp(request.getEmail(), request.getOtp())) {
             throw new InvalidOtpException("Invalid OTP");
         }
@@ -281,7 +297,7 @@ public class AccountService {
         
         User user = User.builder()
                 .username(request.getUsername())
-                .password(request.getPassword()) 
+                .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .phone(request.getPhoneNumber())
@@ -298,31 +314,27 @@ public class AccountService {
         account.setAccountName(user.getFullName());
         accountRepository.save(account);
         
-        return user;
+        return UserProfile.from(user);
     }
 
     private String generateAccountNumber() {
         return String.valueOf(System.currentTimeMillis()).substring(3); // Simple generation
     }
 
-    public AccountDTO login(String username, String password) {
+    public LoginResponse login(String username, String password) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
         
-        if (!password.equals(user.getPassword())) {
+        if (password == null || user.getPassword() == null || !user.getPassword().matches("^\\$2[aby]\\$.*") || !passwordEncoder.matches(password, user.getPassword())) {
             throw new InvalidCredentialsException("Invalid username or password");
         }
 
         AccountBank account = accountRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found for user"));
 
-        return AccountDTO.builder()
-                .id(account.getId())
-                .accountNumber(account.getAccountNumber())
-                .accountName(account.getAccountName())
-                .balance(account.getBalance())
-                .userId(account.getUser().getId())
-                .build();
+        AccountDTO dto = AccountDTO.builder().id(account.getId()).accountNumber(account.getAccountNumber())
+                .accountName(account.getAccountName()).balance(account.getBalance()).userId(user.getId()).build();
+        return new LoginResponse(tokenService.issue(user), "Bearer", 900, user.getRole().name(), dto);
     }
 
     public void forgotPassword(String email) {
@@ -347,7 +359,7 @@ public class AccountService {
         }
         
         // Update password
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         
         log.info("Password reset successful for email: {}", email);

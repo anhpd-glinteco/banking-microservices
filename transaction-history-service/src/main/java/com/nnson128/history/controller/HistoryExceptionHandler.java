@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestControllerAdvice
+@org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
 public class HistoryExceptionHandler {
     @ExceptionHandler(BadHistoryRequestException.class)
     ResponseEntity<Map<String, String>> badRequest() {

@@ -55,7 +55,12 @@ class AccountPreflightTest {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         executor = Executors.newCachedThreadPool();
         server.setExecutor(executor);
-        server.createContext("/api/accounts/number/", exchange -> {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                        org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "RS256").subject("1").build(),
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))));
+        server.createContext("/api/accounts/", exchange -> {
+            assertEquals("Bearer fixture", exchange.getRequestHeaders().getFirst("Authorization"));
             String rawPath = exchange.getRequestURI().getRawPath();
             paths.add(rawPath);
             String number = exchange.getRequestURI().getPath().substring("/api/accounts/number/".length());
@@ -83,20 +88,22 @@ class AccountPreflightTest {
         server.start();
         AccountClient client = new AccountClient("http://127.0.0.1:" + server.getAddress().getPort(), 250, 250);
         mvc = MockMvcBuilders.standaloneSetup(new TransferController(new TransferService(repository, producer, client)))
-                .setControllerAdvice(new GlobalExceptionHandler(), new TransferExceptionHandler()).build();
+                .setControllerAdvice(new GlobalExceptionHandler(), new TransferExceptionHandler(),
+                        new com.nnson128.common.security.SecurityExceptionHandler()).build();
     }
 
     @AfterEach
     void tearDown() {
         server.stop(0);
         executor.shutdownNow();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
     @Test
     void validAccountsAreCheckedBeforePendingSaveAndEvent() throws Exception {
         when(repository.save(any())).thenAnswer(invocation -> {
             Transaction tx = invocation.getArgument(0);
-            assertEquals(List.of("/api/accounts/number/001", "/api/accounts/number/002"), paths);
+            assertEquals(List.of("/api/accounts/number/001", "/api/accounts/lookup/002"), paths);
             tx.ensureId();
             return tx;
         });
@@ -116,14 +123,13 @@ class AccountPreflightTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"PENDING", "PROCESSING"})
-    void duplicateReturnsExistingWithoutAccountCallsOrWrites(String status) throws Exception {
+    void duplicateStillChecksSenderBeforeReturningWithoutWrites(String status) throws Exception {
         Transaction existing = Transaction.builder().id("existing").status(status).build();
         when(repository.findPendingOrProcessingTransaction(anyString(), anyString(), any())).thenReturn(existing);
-        server.stop(0);
         mvc.perform(post("/api/transfers").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.id").value("existing"))
                 .andExpect(jsonPath("$.status").value(status));
-        assertTrue(paths.isEmpty());
+        assertEquals(List.of("/api/accounts/number/001"), paths);
         assertNoWrites();
     }
 
@@ -140,7 +146,7 @@ class AccountPreflightTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"001,201", "002,204", "001,302", "001,400", "002,401", "001,403", "002,409", "001,500", "002,503"})
+    @CsvSource({"001,201", "002,204", "001,302", "001,400", "002,409", "001,500", "002,503"})
     void upstreamFailuresAreSafe503(String number, int status) throws Exception {
         failureAccount = number;
         upstreamStatus = status;
@@ -174,16 +180,16 @@ class AccountPreflightTest {
     void clientEncodesAccountNumberAsSinglePathVariable() {
         AccountClient client = new AccountClient("http://127.0.0.1:" + server.getAddress().getPort());
         client.requireAccount("00/1 +?#");
-        assertEquals(List.of("/api/accounts/number/00%2F1%20%2B%3F%23"), paths);
+        assertEquals(List.of("/api/accounts/lookup/00%2F1%20%2B%3F%23"), paths);
     }
 
     @Test
     void existingStatusEndpointIsUnchanged() throws Exception {
         when(repository.findById("existing")).thenReturn(Optional.of(
-                Transaction.builder().id("existing").status("SUCCESS").build()));
+                Transaction.builder().id("existing").fromAccountNumber("001").toAccountNumber("002").status("SUCCESS").build()));
         mvc.perform(get("/api/transfers/existing/status"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUCCESS"));
-        assertTrue(paths.isEmpty());
+        assertEquals(List.of("/api/accounts/number/001"), paths);
         assertNoWrites();
     }
 
@@ -206,6 +212,64 @@ class AccountPreflightTest {
         invalid.setAmount(new java.math.BigDecimal("0"));
         assertThrows(IllegalArgumentException.class, () -> new TransferService(repository, producer,
                 new AccountClient("http://127.0.0.1:" + server.getAddress().getPort())).initiateTransfer(invalid));
+        assertTrue(paths.isEmpty());
+        assertNoWrites();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"001,401", "001,403", "002,401", "002,403"})
+    void authorizationFailuresPropagateWithoutWrites(String number, int code) throws Exception {
+        failureAccount = number;
+        upstreamStatus = code;
+        upstreamBody = "secret";
+        mvc.perform(post("/api/transfers").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+                .andExpect(status().is(code));
+        assertNoWrites();
+    }
+
+    @Test
+    void adminCannotSpendAnotherOwnersFundsEvenForDuplicate() throws Exception {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                        org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "RS256").subject("2").build(),
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+        mvc.perform(post("/api/transfers").contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(repository, producer);
+    }
+
+    @Test
+    void recipientCanReadStatusButUnrelatedUserCannot() throws Exception {
+        when(repository.findById("existing")).thenReturn(Optional.of(Transaction.builder().id("existing")
+                .fromAccountNumber("001").toAccountNumber("002").status("SUCCESS").build()));
+        failureAccount = "001";
+        upstreamStatus = 403;
+        mvc.perform(get("/api/transfers/existing/status")).andExpect(status().isOk());
+        failureAccount = "002";
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                        org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "RS256").subject("3").build(),
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))));
+        mvc.perform(get("/api/transfers/existing/status")).andExpect(status().isForbidden());
+        assertNoWrites();
+    }
+
+    @Test
+    void adminMayReadStatusWithoutOwningEitherAccount() throws Exception {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                        org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "RS256").subject("9").build(),
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+        when(repository.findById("existing")).thenReturn(Optional.of(Transaction.builder().id("existing")
+                .fromAccountNumber("001").toAccountNumber("002").status("SUCCESS").build()));
+        mvc.perform(get("/api/transfers/existing/status")).andExpect(status().isOk());
+        assertTrue(paths.isEmpty());
+        assertNoWrites();
+    }
+
+    @Test
+    void missingTransferReturnsSafe404() throws Exception {
+        mvc.perform(get("/api/transfers/missing/status")).andExpect(status().isNotFound());
         assertTrue(paths.isEmpty());
         assertNoWrites();
     }

@@ -10,6 +10,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.*;
+import com.nnson128.common.security.SecurityIdentity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
@@ -27,24 +32,41 @@ public class HistoryService {
 
     public List<HistoryLog> forAccountNumber(String accountNumber) {
         if (accountNumber == null || accountNumber.isBlank()) throw new BadHistoryRequestException();
+        authorizedAccount("/api/accounts/number/{account}", accountNumber);
         return repository.findOwnedByAccountNumber(accountNumber);
     }
 
     public List<HistoryLog> forLegacyAccountId(Long accountId) {
         if (accountId == null || accountId <= 0) throw new BadHistoryRequestException();
+        JsonNode account = authorizedAccount("/api/accounts/{account}", accountId);
+        return repository.findOwnedByAccountNumber(account.get("accountNumber").asText());
+    }
+
+    private JsonNode authorizedAccount(String path, Object account) {
+        if (!(SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken authentication)) {
+            throw new AuthenticationCredentialsNotFoundException("Authentication required");
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(authentication.getToken().getTokenValue());
         try {
-            ResponseEntity<String> response = accountRestTemplate.getForEntity(
-                    accountServiceUrl + "/api/accounts/{id}", String.class, accountId);
-            if (!response.getStatusCode().is2xxSuccessful()) throw new HistoryDependencyException();
+            ResponseEntity<String> response = accountRestTemplate.exchange(accountServiceUrl + path,
+                    HttpMethod.GET, new HttpEntity<>(headers), String.class, account);
+            if (response.getStatusCode().value() != 200) throw new HistoryDependencyException();
             JsonNode body = objectMapper.readTree(response.getBody());
             JsonNode number = body == null ? null : body.get("accountNumber");
-            if (number == null || !number.isTextual() || number.asText().isBlank()) throw new HistoryDependencyException();
-            return forAccountNumber(number.asText());
+            JsonNode owner = body == null ? null : body.get("userId");
+            if (number == null || !number.isTextual() || number.asText().isBlank()
+                    || owner == null || !owner.isIntegralNumber() || !owner.canConvertToLong()) throw new HistoryDependencyException();
+            if (account instanceof String && !account.equals(number.asText())) throw new HistoryDependencyException();
+            SecurityIdentity.requireOwnerOrAdmin(owner.longValue());
+            return body;
         } catch (HttpClientErrorException clientError) {
-            if (clientError.getStatusCode() == org.springframework.http.HttpStatus.NOT_FOUND)
-                throw new HistoryAccountNotFoundException();
+            if (clientError.getStatusCode() == HttpStatus.NOT_FOUND) throw new HistoryAccountNotFoundException();
+            if (clientError.getStatusCode() == HttpStatus.UNAUTHORIZED)
+                throw new AuthenticationCredentialsNotFoundException("Authentication required");
+            if (clientError.getStatusCode() == HttpStatus.FORBIDDEN) throw new AccessDeniedException("Access denied");
             throw new HistoryDependencyException();
-        } catch (HistoryAccountNotFoundException | BadHistoryRequestException | HistoryDependencyException known) {
+        } catch (AccessDeniedException | AuthenticationCredentialsNotFoundException | HistoryDependencyException known) {
             throw known;
         } catch (Exception unavailable) {
             throw new HistoryDependencyException();

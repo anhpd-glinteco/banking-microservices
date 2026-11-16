@@ -104,7 +104,7 @@ const QRCodeScanner = ({ account, onTransfer }) => {
         }
 
         const transferAmount = parseFloat(amount);
-        if (transferAmount <= 0) {
+        if (!Number.isFinite(transferAmount) || transferAmount <= 0) {
             toast.error(t('amountGreaterThanZero'));
             return;
         }
@@ -116,17 +116,17 @@ const QRCodeScanner = ({ account, onTransfer }) => {
 
         setLoading(true);
         try {
-            await onTransfer({
+            const completed = await onTransfer({
                 to: scannedData.accountNumber,
                 amount: transferAmount,
                 description
             });
+            if (!completed) return;
 
             // Reset form
             setScannedData(null);
             setAmount('');
             setDescription('');
-            toast.success(t('transferCompletedSuccess'));
         } catch (error) {
             console.error('Transfer error:', error);
         } finally {

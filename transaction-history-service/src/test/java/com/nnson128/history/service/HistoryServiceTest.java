@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nnson128.history.entity.HistoryLog;
 import com.nnson128.history.repository.HistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.http.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,10 @@ class HistoryServiceTest {
 
     @BeforeEach
     void setUp() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                        org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "RS256").subject("1").build(),
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))));
         repository = mock(HistoryRepository.class);
         accountClient = mock(RestTemplate.class);
         EventMapper mapper = new EventMapper(new ObjectMapper());
@@ -39,6 +45,8 @@ class HistoryServiceTest {
 
     @Test
     void ownerQueryUsesExactAccountNumberAndPreservesLeadingZeroes() {
+        when(accountClient.exchange(eq("http://account/api/accounts/number/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq("00123")))
+                .thenReturn(ResponseEntity.ok("{\"userId\":1,\"accountNumber\":\"00123\"}"));
         when(repository.findOwnedByAccountNumber("00123")).thenReturn(List.of());
         assertTrue(service.forAccountNumber("00123").isEmpty());
         verify(repository).findOwnedByAccountNumber("00123");
@@ -46,8 +54,8 @@ class HistoryServiceTest {
 
     @Test
     void legacyIdResolvesAccountNumberInsteadOfCastingId() {
-        when(accountClient.getForEntity("http://account/api/accounts/{id}", String.class, 123L))
-                .thenReturn(ResponseEntity.ok("{\"id\":123,\"accountNumber\":\"00123\"}"));
+        when(accountClient.exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(123L)))
+                .thenReturn(ResponseEntity.ok("{\"id\":123,\"userId\":1,\"accountNumber\":\"00123\"}"));
         when(repository.findOwnedByAccountNumber("00123")).thenReturn(List.of());
         service.forLegacyAccountId(123L);
         verify(repository).findOwnedByAccountNumber("00123");
@@ -55,16 +63,49 @@ class HistoryServiceTest {
 
     @Test
     void unknownLegacyAccountRemains404AndUnavailableAccountServiceIs503() {
-        when(accountClient.getForEntity("http://account/api/accounts/{id}", String.class, 9L))
+        when(accountClient.exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(9L)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
         assertThrows(HistoryService.HistoryAccountNotFoundException.class, () -> service.forLegacyAccountId(9L));
-        when(accountClient.getForEntity("http://account/api/accounts/{id}", String.class, 10L))
+        when(accountClient.exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(10L)))
                 .thenThrow(new IllegalStateException("offline"));
         assertThrows(HistoryService.HistoryDependencyException.class, () -> service.forLegacyAccountId(10L));
-        when(accountClient.getForEntity("http://account/api/accounts/{id}", String.class, 11L))
+        when(accountClient.exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(11L)))
                 .thenReturn(ResponseEntity.ok("{}"));
         assertThrows(HistoryService.HistoryDependencyException.class, () -> service.forLegacyAccountId(11L));
         assertThrows(HistoryService.BadHistoryRequestException.class, () -> service.forLegacyAccountId(0L));
+    }
+
+    @AfterEach
+    void clearSecurity() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
+    @Test
+    void authorizationErrorsAndForeignOwnerNeverReadHistory() {
+        when(accountClient.exchange(eq("http://account/api/accounts/number/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq("foreign")))
+                .thenReturn(ResponseEntity.ok("{\"userId\":2,\"accountNumber\":\"foreign\"}"));
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> service.forAccountNumber("foreign"));
+        for (HttpStatus code : List.of(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN)) {
+            when(accountClient.exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(9L)))
+                    .thenThrow(new HttpClientErrorException(code));
+            Class<? extends RuntimeException> expected = code == HttpStatus.UNAUTHORIZED
+                    ? org.springframework.security.core.AuthenticationException.class
+                    : org.springframework.security.access.AccessDeniedException.class;
+            assertThrows(expected, () -> service.forLegacyAccountId(9L));
+        }
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void adminMayReadAnotherOwnersHistoryAndBearerIsForwarded() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                        org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "RS256").subject("9").build(),
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+        when(accountClient.exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class), eq(9L)))
+                .thenReturn(ResponseEntity.ok("{\"userId\":2,\"accountNumber\":\"foreign\"}"));
+        service.forLegacyAccountId(9L);
+        verify(accountClient).exchange(eq("http://account/api/accounts/{account}"), eq(HttpMethod.GET),
+                argThat((HttpEntity<?> entity) -> "Bearer fixture".equals(entity.getHeaders().getFirst("Authorization"))), eq(String.class), eq(9L));
+        verify(repository).findOwnedByAccountNumber("foreign");
     }
 
     @Test

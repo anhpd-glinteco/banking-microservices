@@ -35,12 +35,14 @@ public class AccountController {
 
     @GetMapping("/users/{id}")
     public UserProfile getUser(@PathVariable @Positive Long id) {
+        com.nnson128.common.security.SecurityIdentity.requireOwnerOrAdmin(id);
         return accountService.getUser(id);
     }
 
     @PatchMapping("/users/{id}")
     public UserProfile updateUser(@PathVariable @Positive Long id,
             @NotNull @Valid @RequestBody UpdateUserProfileRequest request) {
+        com.nnson128.common.security.SecurityIdentity.requireOwnerOrAdmin(id);
         return accountService.updateUser(id, request);
     }
 
@@ -61,16 +63,24 @@ public class AccountController {
 
     @GetMapping("/{id}")
     public AccountDTO getAccount(@PathVariable Long id) {
+        accountService.requireAccountOwner(id, true);
         return accountService.getAccount(id);
     }
     
     @GetMapping("/number/{accountNumber}")
     public AccountDTO getAccountByNumber(@PathVariable String accountNumber) {
-        return accountService.getAccountByNumber(accountNumber);
+        AccountDTO account = accountService.getAccountByNumber(accountNumber);
+        com.nnson128.common.security.SecurityIdentity.requireOwnerOrAdmin(account.getUserId());
+        return account;
     }
     
+    @GetMapping("/lookup/{accountNumber}")
+    public AccountLookup lookup(@PathVariable String accountNumber) {
+        return accountService.lookup(accountNumber);
+    }
+
     @PostMapping("/login")
-    public AccountDTO login(@RequestBody LoginRequest request) {
+    public LoginResponse login(@RequestBody LoginRequest request) {
         return accountService.login(request.getUsername(), request.getPassword());
     }
 
@@ -80,7 +90,7 @@ public class AccountController {
     }
 
     @PostMapping("/users/register-with-otp")
-    public User registerWithOtp(@RequestBody RegisterRequest request) {
+    public UserProfile registerWithOtp(@RequestBody RegisterRequest request) {
         return accountService.registerWithOtp(request);
     }
 

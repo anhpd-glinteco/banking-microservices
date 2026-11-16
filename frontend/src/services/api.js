@@ -9,7 +9,7 @@ export const post = (url, data, config = {}) => axios.post(url, data, config);
 // Account APIs
 // Account APIs
 export const fetchAccount = (id) => get(`/api/accounts/${id}`);
-export const fetchAccountByNumber = (accountNumber) => get(`/api/accounts/number/${accountNumber}`);
+export const fetchAccountByNumber = (accountNumber) => get(`/api/accounts/lookup/${encodeURIComponent(accountNumber)}`);
 export const login = (data) => post('/api/accounts/login', data);
 export const createAccount = (data) => post('/api/accounts', data);
 export const createUser = (data) => post('/api/accounts/users', data);

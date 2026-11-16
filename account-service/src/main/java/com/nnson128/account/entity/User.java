@@ -23,7 +23,15 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
     
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @lombok.ToString.Exclude
     private String password;
+
+    public enum Role { USER, ADMIN }
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
     private String fullName;
     
     @Column(unique = true, nullable = false)

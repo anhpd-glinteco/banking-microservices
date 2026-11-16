@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchHistory } from '@/services/api';
 import { ArrowUpOutlined, ArrowDownOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { Tag, Pagination } from 'antd';
+import { formatHistoryTimestamp, parseHistoryTimestamp } from './historyDate';
 import './History.scss';
 
 const getTransactionTitle = (type, description, eventType, t) => {
@@ -58,7 +59,7 @@ const History = ({ accountNumber, isDashboard = false }) => {
                 // Determine transaction type based on account number
                 const isCredit = log.eventType === 'COMPENSATION' ||
                     log.toAccountNumber === accountNumber || details.toAccountId === accountNumber;
-                const amount = details.amount || 0;
+                const amount = details.amount ?? null;
                 const txId = log.transactionId || log.id; // Fallback to log ID if txId missing
 
                 const mappedItem = {
@@ -69,12 +70,13 @@ const History = ({ accountNumber, isDashboard = false }) => {
                     desc: getTransactionTitle(isCredit ? 'credit' : 'debit', details.description, log.eventType, t),
                     amount: amount,
                     type: isCredit ? 'credit' : 'debit',
-                    status: details.status || (log.eventType === 'TRANSFER_FAILED' ? 'FAILED' : 'COMPLETED'),
-                    timestamp: new Date(log.timestamp)
+                    status: details.status || ({ TRANSFER_FAILED: 'FAILED', TRANSFER_COMPLETED: 'SUCCESS', COMPENSATION: 'COMPENSATED' }[log.eventType] || 'PROCESSING'),
+                    timestamp: parseHistoryTimestamp(log.timestamp)
                 };
 
                 if (transactionMap.has(txId)) {
                     const existing = transactionMap.get(txId);
+                    if (existing.amount === null && mappedItem.amount !== null) existing.amount = mappedItem.amount;
 
                     // Merge logic: Prefer "SUCCESS" status, prefer specific description over generic
                     // Update if current item has a description and existing doesn't (or is generic)
@@ -106,20 +108,14 @@ const History = ({ accountNumber, isDashboard = false }) => {
             // Convert map values to array and format date
             const mapped = Array.from(transactionMap.values()).map(item => ({
                 ...item,
-                date: item.timestamp.toLocaleString('vi-VN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                date: formatHistoryTimestamp(item.timestamp)
             }));
 
             // Sort by most recent first
             mapped.sort((a, b) => b.timestamp - a.timestamp);
             setTransactions(mapped);
         } catch (e) {
-            setError(t('couldNotLoadHistory'));
+            setError(e.response?.status === 403 ? e.message : t('couldNotLoadHistory'));
             console.error(e);
         } finally {
             setLoading(false);
@@ -179,6 +175,9 @@ const History = ({ accountNumber, isDashboard = false }) => {
                                         </div>
                                         <div className="details">
                                             <h4 className="tx-title">{tx.desc}</h4>
+                                            <Tag color={tx.status === 'FAILED' ? 'red' : ['SUCCESS', 'COMPLETED', 'COMPENSATED'].includes(tx.status) ? 'green' : 'blue'}>
+                                                {tx.status === 'FAILED' ? t('failed') : tx.status === 'COMPENSATED' ? t('refund') : ['SUCCESS', 'COMPLETED'].includes(tx.status) ? t('completed') : t('processing')}
+                                            </Tag>
                                             <div className="tx-meta">
                                                 <span className="tx-date">{tx.date}</span>
                                                 {tx.transactionId && (
@@ -188,7 +187,7 @@ const History = ({ accountNumber, isDashboard = false }) => {
                                         </div>
                                         <div className="tx-amount-wrapper">
                                             <div className={`amount ${tx.type}`}>
-                                                {tx.type === 'credit' ? '+' : '-'}{parseFloat(tx.amount).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                                                {['SUCCESS', 'COMPLETED', 'COMPENSATED'].includes(tx.status) ? (tx.type === 'credit' ? '+' : '-') : `${t('requestedAmount')}: `}{tx.amount === null ? '?' : Number(tx.amount).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                                             </div>
                                         </div>
                                     </div>

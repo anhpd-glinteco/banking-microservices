@@ -7,24 +7,29 @@ import Register from '@/Page/Login/Register';
 import ForgotPassword from '@/Page/Login/ForgotPassword';
 import Home from '@/Page/Home/Home';
 import { login, initiateTransfer, fetchAccount, fetchTransferStatus } from '@/services/api';
+import { clearSession } from '@/services/axios';
 import '@/styles/global.scss';
 
 function App() {
   const { t } = useTranslation();
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+  const [initialSession] = useState(() => {
+    const token = sessionStorage.getItem('accessToken');
+    try {
+      const savedAccount = JSON.parse(localStorage.getItem('account'));
+      const role = sessionStorage.getItem('role');
+      if (token && savedAccount?.id && ['USER', 'ADMIN'].includes(role)) {
+        return { token, account: savedAccount, user: { id: savedAccount.userId, name: savedAccount.accountName, role } };
+      }
+    } catch { /* Discard invalid cached account data. */ }
+    clearSession();
+    return { token: null, account: null, user: null };
   });
-  const [account, setAccount] = useState(() => {
-    const saved = localStorage.getItem('account');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(initialSession.user);
+  const [account, setAccount] = useState(initialSession.account);
+  const [isVerifying, setIsVerifying] = useState(!!initialSession.token);
 
-  const [isVerifying, setIsVerifying] = useState(!!user);
-
-  // Persist user and account to localStorage
   useEffect(() => {
-    if (user && account) {
+    if (user && account && sessionStorage.getItem('accessToken')) {
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('account', JSON.stringify(account));
     } else {
@@ -33,65 +38,55 @@ function App() {
     }
   }, [user, account]);
 
-  // Verify session on mount
   useEffect(() => {
-    const verifySession = async () => {
-      if (!user) {
-        setIsVerifying(false);
-        return;
-      }
-
-      try {
-        // We use the stored user ID (or account ID) to verify
-        // Ideally this endpoint should also validate the token cookie/header
-        const data = await fetchAccount(account?.id || user.id); // account.id is safer if user.id is not consistent
-        setAccount(data);
-        // Optional: Update user name if it changed
-        if (data.accountName) {
-          setUser(prev => ({ ...prev, name: data.accountName, id: data.userId }));
-        }
-      } catch (error) {
-        console.error('Session verification failed', error);
-        // Session invalid, log out
-        setUser(null);
-        setAccount(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('account');
-        toast.error('Phiên đăng nhập hết hạn');
-      } finally {
-        setIsVerifying(false);
-      }
+    const expire = () => {
+      setUser(null);
+      setAccount(null);
+      setIsVerifying(false);
     };
+    window.addEventListener('session-expired', expire);
+    return () => window.removeEventListener('session-expired', expire);
+  }, []);
 
-    verifySession();
-  }, []); // Run once on mount
+  useEffect(() => {
+    if (!initialSession.token) return;
+    let active = true;
+    const isCurrent = () => active && sessionStorage.getItem('accessToken') === initialSession.token;
+    fetchAccount(initialSession.account.id).then((data) => {
+      if (!isCurrent()) return;
+      setAccount(data);
+      setUser(prev => ({ ...prev, name: data.accountName, id: data.userId }));
+    }).catch((error) => {
+      if (!isCurrent()) return;
+      // A temporary outage or a denial does not log out a valid session.
+      toast.error(error.message);
+    }).finally(() => {
+      if (isCurrent()) setIsVerifying(false);
+    });
+    return () => { active = false; };
+  }, [initialSession]);
 
   const handleLogin = async (username, password) => {
     try {
       const data = await login({ username, password });
-      // Data is AccountDTO which contains userId. 
-      // Ideally we want User details too. 
-      // For MVP, AccountDTO has what we need? Account name, Balance.
-      // User Name is not in AccountDTO directly (only ID).
-      // We might want to fetch User details separately or enrich AccountDTO.
-      // Let's assume AccountName is enough or "User {id}".
-      // Or update AccountDTO to include fullName?
-
-      const userData = { id: data.userId, name: data.accountName };
-      setUser(userData);
-      setAccount(data);
+      if (!data.accessToken || data.tokenType !== 'Bearer' || !['USER', 'ADMIN'].includes(data.role) || !data.account?.id) {
+        throw new Error(t('loginFailed'));
+      }
+      sessionStorage.setItem('accessToken', data.accessToken);
+      sessionStorage.setItem('role', data.role);
+      setUser({ id: data.account.userId, name: data.account.accountName, role: data.role });
+      setAccount(data.account);
+      setIsVerifying(false);
       toast.success(t('loginSuccess'));
     } catch (e) {
-      console.error(e);
-      // Display the actual error message from the server
       toast.error(e.message || t('loginFailed'));
     }
   };
 
   const handleTransfer = async ({ to, amount, description }) => {
-    if (parseFloat(amount) > account.balance) {
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0 || Number(amount) > account.balance) {
       toast.error(t('invalidAmount'));
-      return;
+      return false;
     }
 
     const toastId = toast.loading(t('transferring'));
@@ -119,11 +114,17 @@ function App() {
             const status = await fetchTransferStatus(transaction.id);
 
             if (status.status === 'SUCCESS') {
+              try {
+                setAccount(await fetchAccount(account.id));
+              } catch {
+                toast.success('Giao dịch thành công. Vui lòng tải lại số dư.', { id: toastId });
+                return true;
+              }
               toast.success(t('transferSuccess'), { id: toastId });
-              return;
+              return true;
             } else if (status.status === 'FAILED') {
               toast.error(t('transferFailed') + ": " + (status.failureReason || 'Unknown error'), { id: toastId });
-              return;
+              return false;
             }
             // If still PROCESSING, continue polling
           } catch (error) {
@@ -131,20 +132,22 @@ function App() {
             // If it's a 4xx or 5xx error, we probably shouldn't retry indefinitely or at all
             // But let's verify if it's an axios error
             if (error.response && (error.response.status === 401 || error.response.status === 403 || error.response.status === 404)) {
-                 toast.error(t('transferFailed') + ": Cannot verify status", { id: toastId });
-                 return; // Stop polling on auth/not found errors
+                 toast.error(error.response.status === 403 ? error.message : 'Không thể xác minh trạng thái giao dịch. Vui lòng kiểm tra lại sau.', { id: toastId });
+                 return false;
             }
           }
         }
 
         // Timeout
         toast.error('Giao dịch đang xử lý. Vui lòng kiểm tra lại sau.', { id: toastId });
+        return false;
       };
 
-      await checkStatus();
+      return await checkStatus();
 
     } catch (e) {
       toast.error(t('transferFailed') + ": " + e.message, { id: toastId });
+      return false;
     }
   };
 
@@ -260,10 +263,7 @@ function App() {
                   account={account}
                   setAccount={setAccount}
                   onLogout={() => {
-                    setUser(null);
-                    setAccount(null);
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('account');
+                    clearSession();
                     toast(t('loggedOut'), { icon: '👋' });
                   }}
                   onTransfer={handleTransfer}

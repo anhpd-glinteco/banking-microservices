@@ -24,9 +24,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.mockito.ArgumentCaptor;
 
+@org.springframework.security.test.context.support.WithMockUser(username = "1", roles = "ADMIN")
 @WebMvcTest({AccountController.class, LoanController.class})
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, com.nnson128.account.security.AccountSecurityConfiguration.class})
 class LoanValidationTest {
+    @MockBean java.security.interfaces.RSAPublicKey jwtPublicKey;
+    @MockBean org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder;
     @Autowired MockMvc mvc;
     @MockBean AccountService accountService;
     @MockBean LoanService loanService;

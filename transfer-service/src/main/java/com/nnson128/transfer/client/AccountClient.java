@@ -11,6 +11,14 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import com.nnson128.common.security.SecurityIdentity;
+import com.nnson128.transfer.entity.Transaction;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 
@@ -36,11 +44,39 @@ public class AccountClient {
         client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
     }
 
+    public void requireSender(String accountNumber) {
+        AccountDTO account = fetch(accountNumber, false);
+        SecurityIdentity.requireOwner(account.getUserId());
+    }
+
     public void requireAccount(String accountNumber) {
-        AccountDTO account;
+        fetch(accountNumber, true);
+    }
+
+    public void requireParticipant(Transaction transaction) {
+        if (SecurityIdentity.isAdmin()) return;
         try {
-            account = client.get().uri("/api/accounts/number/{accountNumber}", accountNumber)
+            requireSender(transaction.getFromAccountNumber());
+            return;
+        } catch (AccessDeniedException denied) {
+            // A recipient may read a transfer even when the sender belongs to someone else.
+        }
+        requireSender(transaction.getToAccountNumber());
+    }
+
+    private AccountDTO fetch(String accountNumber, boolean lookup) {
+        AccountDTO account;
+        if (!(SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken authentication)) {
+            throw new AuthenticationCredentialsNotFoundException("Authentication required");
+        }
+        try {
+            account = client.get().uri(lookup ? "/api/accounts/lookup/{accountNumber}" : "/api/accounts/number/{accountNumber}", accountNumber)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + authentication.getToken().getTokenValue())
                     .retrieve()
+                    .onStatus(status -> status.value() == 401,
+                            (request, response) -> { throw new AuthenticationCredentialsNotFoundException("Authentication required"); })
+                    .onStatus(status -> status.value() == 403,
+                            (request, response) -> { throw new AccessDeniedException("Access denied"); })
                     .onStatus(status -> status.value() != 200 && status.value() != 404,
                             (request, response) -> { throw new AccountServiceUnavailableException(); })
                     .body(AccountDTO.class);
@@ -52,8 +88,10 @@ public class AccountClient {
         } catch (RestClientException ex) {
             throw new AccountServiceUnavailableException();
         }
-        if (account == null || accountNumber == null || !accountNumber.equals(account.getAccountNumber())) {
+        if (account == null || accountNumber == null || !accountNumber.equals(account.getAccountNumber())
+                || (!lookup && account.getUserId() == null)) {
             throw new AccountServiceUnavailableException();
         }
+        return account;
     }
 }

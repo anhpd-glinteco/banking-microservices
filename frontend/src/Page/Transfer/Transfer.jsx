@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { fetchAccountByNumber } from '@/services/api';
 import { showNotification } from '@/utils/toast';
@@ -12,6 +13,7 @@ const Transfer = ({ account, onTransfer }) => {
     const [description, setDescription] = useState(defaultDescription);
     const [loading, setLoading] = useState(false);
     const [recentRecipients, setRecentRecipients] = useState([]);
+    const lookupVersion = useRef(0);
 
     // Load recent recipients from localStorage
     useEffect(() => {
@@ -46,6 +48,9 @@ const Transfer = ({ account, onTransfer }) => {
 
     // Handle clicking on a recent recipient
     const handleSelectRecipient = async (recipient) => {
+        if (loading) return;
+        lookupVersion.current++;
+        setCheckingAccount(false);
         setTo(recipient.accountNumber);
         setRecipientName(recipient.accountName);
     };
@@ -76,8 +81,10 @@ const Transfer = ({ account, onTransfer }) => {
 
     // Handle recipient account lookup
     const handleRecipientBlur = async () => {
+        const version = ++lookupVersion.current;
         if (!to || to.length < 5) {
             setRecipientName('');
+            setCheckingAccount(false);
             return;
         };
 
@@ -86,6 +93,7 @@ const Transfer = ({ account, onTransfer }) => {
 
         try {
             const response = await fetchAccountByNumber(to);
+            if (version !== lookupVersion.current) return;
             console.log('Account lookup response:', response);
 
             // Check if response has data property (axios response structure)
@@ -99,11 +107,13 @@ const Transfer = ({ account, onTransfer }) => {
                 showNotification.error(t('error'), t('recipientNotFound'), { id: toastId });
             }
         } catch (error) {
+            if (version !== lookupVersion.current) return;
             setRecipientName('');
             console.log('Account lookup error', error);
-            showNotification.error(t('error'), t('recipientNotFound'), { id: toastId });
+            showNotification.error(t('error'), error.response?.status === 403 ? error.message : t('recipientNotFound'), { id: toastId });
         } finally {
-            setCheckingAccount(false);
+            if (version === lookupVersion.current) setCheckingAccount(false);
+            else toast.dismiss(toastId);
         }
     };
 
@@ -117,7 +127,7 @@ const Transfer = ({ account, onTransfer }) => {
         }
 
         const transferAmount = parseFloat(amount);
-        if (transferAmount <= 0) {
+        if (!Number.isFinite(transferAmount) || transferAmount <= 0) {
             showNotification.error(t('error'), t('amountGreaterThanZero'));
             return;
         }
@@ -129,7 +139,8 @@ const Transfer = ({ account, onTransfer }) => {
 
         setLoading(true);
         try {
-            await onTransfer({ to, amount: transferAmount, description });
+            const completed = await onTransfer({ to, amount: transferAmount, description });
+            if (!completed) return;
 
             // Save to recent recipients
             if (recipientName) {
@@ -142,7 +153,6 @@ const Transfer = ({ account, onTransfer }) => {
             setAmount('');
             setDescription(defaultDescription);
 
-            showNotification.success(t('success'), t('transferCompleted'));
         } catch (error) {
             // Error is already handled by parent, just update state
             console.error('Transfer error:', error);
@@ -163,7 +173,7 @@ const Transfer = ({ account, onTransfer }) => {
                         <label>{t('recipientAccount')} <span className="required">*</span></label>
                         <input
                             value={to}
-                            onChange={e => setTo(e.target.value)}
+                            onChange={e => { lookupVersion.current++; setTo(e.target.value); setRecipientName(''); setCheckingAccount(false); }}
                             onBlur={handleRecipientBlur}
                             placeholder={t('recipientAccount')}
                             required

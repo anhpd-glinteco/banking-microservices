@@ -49,6 +49,10 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
     const activeTab = getTabFromPath();
     const [account, setAccount] = useState(initialAccount);
 
+    useEffect(() => {
+        setAccount(initialAccount);
+    }, [initialAccount]);
+
     // WebSocket connection for realtime balance updates
     useEffect(() => {
         if (!account?.accountNumber) return;
@@ -121,16 +125,15 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
             setAccount(data);
             if (setParentAccount) setParentAccount(data);
             showNotification.success(t('balanceUpdated'));
-        } catch {
-            showNotification.error(t('failedRefresh'));
+        } catch (error) {
+            showNotification.error(error.response?.status === 403 ? error.message : t('failedRefresh'));
         }
     };
 
     // Removed auto-refresh polling since we now use WebSocket for realtime updates
 
     const handleTransfer = async (transferData) => {
-        await onTransfer(transferData);
-        // No need to manually refresh - WebSocket will update balance automatically
+        return await onTransfer(transferData);
     };
 
     // Menu Item Configuration
@@ -277,7 +280,7 @@ const Home = ({ user, account: initialAccount, setAccount: setParentAccount, onL
             case 'transfer': return <Transfer account={account} onTransfer={handleTransfer} />;
             case 'qr-pay': return <QRCodeScanner account={account} onTransfer={handleTransfer} />;
             case 'qr-receive': return <QRCodeGenerator account={account} />;
-            case 'loan': return <Loan account={account} onRefreshAccount={refreshBalance} />;
+            case 'loan': return <Loan role={user.role} account={account} onRefreshAccount={refreshBalance} />;
             case 'history': return <History accountNumber={account.accountNumber} />;
             case 'settings': return (
                 <Card title={t('accountSettings')} className="main-card">

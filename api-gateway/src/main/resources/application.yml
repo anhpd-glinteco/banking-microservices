@@ -14,7 +14,7 @@ spring:
         - id: account-service
           uri: lb://account-service
           predicates:
-            - Path=/api/accounts/**
+            - Path=/api/accounts/**,/api/loans/**
         - id: transfer-service
           uri: lb://transfer-service
           predicates:
@@ -31,11 +31,16 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:5173"
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://127.0.0.1:5173"
+              - "http://localhost:5174"
+              - "http://127.0.0.1:5174"
             allowedMethods:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
             allowedHeaders: "*"

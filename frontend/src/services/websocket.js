@@ -9,6 +9,8 @@ class WebSocketService {
     }
 
     connect(accountNumber, onBalanceUpdate) {
+        const url = import.meta.env.VITE_WEBSOCKET_URL;
+        if (!url) return; // Legacy notification topics require an explicitly configured service.
         // If already connected to same account, just update callback
         if (this.connected && this.subscriptions.has(accountNumber)) {
             console.log('WebSocket already connected to account:', accountNumber);
@@ -23,7 +25,7 @@ class WebSocketService {
 
         // Create STOMP client
         this.client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8083/ws'),
+            webSocketFactory: () => new SockJS(url),
             debug: (str) => {
                 console.log('STOMP: ' + str);
             },
