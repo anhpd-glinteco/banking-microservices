@@ -25,8 +25,7 @@ public class NotificationConsumer {
     public void handleAccountEvents(String message) {
         try {
             BalanceChangedEvent event = objectMapper.readValue(message, BalanceChangedEvent.class);
-            log.info("Sending notification to account {}: {} {} VND", 
-                event.getAccountId(), event.getTransactionType(), event.getTransactionAmount());
+            log.info("Processing balance change notification.");
             
             // Send WebSocket notification to specific account
             messagingTemplate.convertAndSend("/topic/account/" + event.getAccountId(), event);
@@ -47,7 +46,7 @@ public class NotificationConsumer {
                 );
             }
         } catch (Exception e) {
-            log.error("Notification Error: {}", message, e);
+            log.error("Balance change notification failed ({})", e.getClass().getSimpleName());
         }
     }
 
@@ -57,13 +56,13 @@ public class NotificationConsumer {
             JsonNode node = objectMapper.readTree(message);
             if (node.has("status") && "SUCCESS".equals(node.get("status").asText())) {
                 TransferCompletedEvent e = objectMapper.treeToValue(node, TransferCompletedEvent.class);
-                log.info("Sending Email: Transfer {} of {} complete.", e.getTransactionId(), e.getAmount());
+                log.info("Transfer {} completed.", e.getTransactionId());
             } else if (node.has("reason") && !node.has("amount")) {
                  TransferFailedEvent e = objectMapper.treeToValue(node, TransferFailedEvent.class);
-                 log.info("Sending Email: Transfer {} failed: {}", e.getTransactionId(), e.getReason());
+                 log.info("Transfer {} failed.", e.getTransactionId());
             }
         } catch (Exception e) {
-             log.error("Notification Error: {}", message);
+             log.error("Transfer notification processing failed ({})", e.getClass().getSimpleName());
         }
     }
     
@@ -73,7 +72,7 @@ public class NotificationConsumer {
             OtpGeneratedEvent event = objectMapper.readValue(message, OtpGeneratedEvent.class);
             emailService.sendOtpEmail(event.getEmail(), event.getOtp());
         } catch (Exception e) {
-            log.error("Failed to handle OTP event: {}", message, e);
+            log.error("OTP notification processing failed ({})", e.getClass().getSimpleName());
         }
     }
 }

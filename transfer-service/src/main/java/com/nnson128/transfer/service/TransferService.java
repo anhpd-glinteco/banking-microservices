@@ -93,7 +93,7 @@ public class TransferService {
             tx.setFailureReason(event.getReason());
             tx.setRetryCount(tx.getRetryCount() + 1);
             transactionRepository.save(tx);
-            log.warn("Transaction {} failed: {} (Retry count: {})", tx.getId(), event.getReason(), tx.getRetryCount());
+            log.warn("Transaction {} failed (retry count: {})", tx.getId(), tx.getRetryCount());
         });
     }
 

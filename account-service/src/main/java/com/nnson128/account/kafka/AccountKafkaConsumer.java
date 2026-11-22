@@ -29,7 +29,7 @@ public class AccountKafkaConsumer {
                  accountService.handleTransactionCreated(event);
             }
         } catch (Exception e) {
-            log.error("Error processing message in deductor: {}", message, e);
+            log.error("Account Kafka deductor failed ({})", e.getClass().getSimpleName());
         }
     }
 
@@ -43,7 +43,7 @@ public class AccountKafkaConsumer {
                  accountService.handleMoneyDeducted(event);
             }
         } catch (Exception e) {
-             log.error("Error processing message in creditor: {}", message, e);
+             log.error("Account Kafka creditor failed ({})", e.getClass().getSimpleName());
         }
     }
 
@@ -57,7 +57,7 @@ public class AccountKafkaConsumer {
                 accountService.handleCompensation(event);
             }
         } catch (Exception e) {
-             log.error("Error processing message in compensator: {}", message, e);
+             log.error("Account Kafka compensator failed ({})", e.getClass().getSimpleName());
         }
     }
 }

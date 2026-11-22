@@ -32,7 +32,7 @@ public class OtpService {
                 
         kafkaProducer.sendEvent("notification.otp", event);
         
-        log.info("OTP generated for {}, event published.", email);
+        log.info("OTP event published.");
         return otp;
     }
 

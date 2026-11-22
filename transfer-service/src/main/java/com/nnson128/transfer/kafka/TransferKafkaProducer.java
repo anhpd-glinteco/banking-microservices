@@ -17,10 +17,10 @@ public class TransferKafkaProducer {
     public void sendEvent(String topic, BaseEvent event) {
         try {
             String payload = objectMapper.writeValueAsString(event);
-            log.info("Sending event {}: {}", topic, payload);
+            log.info("Publishing Kafka event to {}", topic);
             kafkaTemplate.send(topic, event.getTransactionId(), payload);
         } catch (Exception e) {
-            log.error("Failed to serialize event: {}", event, e);
+            log.error("Kafka event serialization failed for {} ({})", topic, e.getClass().getSimpleName());
         }
     }
 }

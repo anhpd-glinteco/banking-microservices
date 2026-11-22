@@ -28,15 +28,15 @@ class HttpResult:
 
 
 class AcceptanceRun:
-    def __init__(self, args: argparse.Namespace) -> None:
+    def __init__(self, args: argparse.Namespace, *, run_id_key="TH7_RUN_ID", history_port_key="HISTORY_HOST_PORT") -> None:
         self.env_file = Path(args.env_file)
         self.output_directory = Path(args.output_directory)
         self.project_name = args.project_name
         self.compose_file = args.compose_file
         self.environment = self._read_environment(self.env_file)
-        self.run_id = self.environment["TH7_RUN_ID"]
+        self.run_id = self.environment[run_id_key]
         self.gateway = f'http://127.0.0.1:{self.environment["GATEWAY_HOST_PORT"]}'
-        self.history = f'http://127.0.0.1:{self.environment["HISTORY_HOST_PORT"]}'
+        self.history = f'http://127.0.0.1:{self.environment[history_port_key]}'
         self.history_timeout = 180
         self.cases: list[dict[str, object]] = []
         self.requests: list[dict[str, object]] = []
@@ -190,8 +190,7 @@ class AcceptanceRun:
         password = uuid.uuid4().hex + "B7!"
         otp_request = self._request("POST", "/api/accounts/otp/generate?" + urllib.parse.urlencode({"email": email}))
         self._require(otp_request.status == 200, "OTP request through the API Gateway failed.")
-        otp = self._compose("exec", "-T", "redis", "redis-cli", "GET", f"otp:{email}")
-        self._require(bool(re.fullmatch(r"\d{6}", otp)), "The synthetic OTP was not created in the fixture Redis instance.")
+        otp = self._otp_for(email)
         registration = self._request("POST", "/api/accounts/users/register-with-otp", body={
             "fullName": f"TH7 {role.title()}", "username": username, "password": password,
             "email": email, "otp": otp,
@@ -208,6 +207,11 @@ class AcceptanceRun:
         login = self._request("POST", "/api/accounts/login", body={"username": username, "password": password})
         self._require(login.status == 200 and login.body.get("accessToken"), "Fixture user login did not return a JWT.")
         return {"id": int(account_id), "number": account_number, "token": login.body["accessToken"]}
+
+    def _otp_for(self, email: str) -> str:
+        otp = self._compose("exec", "-T", "redis", "redis-cli", "GET", f"otp:{email}")
+        self._require(bool(re.fullmatch(r"\d{6}", otp)), "The synthetic OTP was not created in the fixture Redis instance.")
+        return otp
 
     def _history(self, account: dict[str, object], *, token: str | None = None, trace: str | None = None) -> HttpResult:
         return self._request(
