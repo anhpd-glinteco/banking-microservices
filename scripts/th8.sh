@@ -30,6 +30,9 @@ fi
 
 [[ -s "$run/.env" ]] || { echo 'Initialize the run first.' >&2; exit 2; }
 cd "$repo"
+# Compose gives inherited variables precedence over the selected env file.
+unset TH8_RUN_ID TH8_KEY_DIR COMPOSE_PROJECT_NAME FRONTEND_HOST_PORT GATEWAY_HOST_PORT EUREKA_HOST_PORT MAILPIT_HOST_PORT
+unset MYSQL_ROOT_PASSWORD ACCOUNT_DB_PASSWORD TRANSFER_DB_PASSWORD HISTORY_DB_PASSWORD
 compose=(docker compose -p "$project" --env-file "$run/.env" -f "$repo/compose.th8.yml")
 case "$action" in
     up) "${compose[@]}" up -d --build --wait --wait-timeout 300 ;;

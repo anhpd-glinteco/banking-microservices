@@ -30,7 +30,7 @@ bash scripts/th8.sh down demo01
 bash scripts/th8.sh up demo01
 ```
 
-Mỗi lần test sinh một thư mục bằng chứng riêng. Lệnh test chủ động dừng ứng dụng và dữ liệu trong project tương ứng. Dùng `down` thường để giữ volume và khóa của run. Dùng cùng ID để kiểm tra dữ liệu sau dựng lại. Dùng ID mới để diễn tập với volume mới.
+Mỗi lần test sinh một thư mục bằng chứng riêng. Nếu ca lỗi giữa chừng, giữ lại log và dùng lệnh `up` với đúng ID để đưa các service đã dừng về trạng thái healthy trước khi thử lại. Lệnh test chủ động dừng ứng dụng và dữ liệu trong project tương ứng. Dùng `down` thường để giữ volume và khóa của run. Dùng cùng ID để kiểm tra dữ liệu sau dựng lại. Dùng ID mới để diễn tập với volume mới.
 
 Để gọi thao tác Compose thủ công, thay đường dẫn `<run-dir>` bằng thư mục script `init` in ra.
 
