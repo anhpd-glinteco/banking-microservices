@@ -4,6 +4,9 @@
 
 - Lần chạy baseline TH7 dừng giữa Maven verify sau khi WSL khởi động lại. Log chỉ xác nhận module common đã chạy xong. Kết quả lịch sử TH7 không thay thế lần chạy này.
 - Các lần build đầu tiên có phiên Docker bị ngắt giữa quá trình tải và đóng gói. Giữ lại log gốc cùng các lần chạy lại. Khi gặp POM rỗng trong cache sau gián đoạn, thử lại với cache Maven riêng.
+- Một image Eureka từ lượt build bị ngắt chứa JAR hỏng. Dockerfile kiểm tra JAR trước khi tạo image, và Maven dùng cache riêng cho TH8.
+- Một lượt build báo Maven tìm JAR common sai đường dẫn. Đã chuyển tham số sang đường dẫn tuyệt đối trong builder.
+- MySQL trên volume của một lượt bị ngắt báo thư mục dữ liệu chưa khởi tạo hoàn chỉnh. Lượt tiếp theo dùng volume mới theo project khác và giữ lại dữ liệu cũ.
 - Kết quả runtime thực tế và các lần thử nằm trong thư mục bằng chứng phát hành đi kèm.
 
 ## Phân tích ca chủ động

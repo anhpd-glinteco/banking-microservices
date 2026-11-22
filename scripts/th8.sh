@@ -28,7 +28,7 @@ if [[ $action == init ]]; then
     exit 0
 fi
 
-[[ -f "$run/.env" ]] || { echo 'Initialize the run first.' >&2; exit 2; }
+[[ -s "$run/.env" ]] || { echo 'Initialize the run first.' >&2; exit 2; }
 cd "$repo"
 compose=(docker compose -p "$project" --env-file "$run/.env" -f "$repo/compose.th8.yml")
 case "$action" in

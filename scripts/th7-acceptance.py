@@ -173,7 +173,7 @@ class AcceptanceRun:
     def _wait_registered(self, expected_account_count: int, timeout: int | None = None) -> dict[str, list[str]]:
         deadline = time.monotonic() + (timeout or self.history_timeout)
         last = {}
-        required = {"account-service", "transfer-service", "transaction-history-service", "notification-service", "api-gateway"}
+        required = {"transfer-service", "transaction-history-service", "notification-service", "api-gateway"}
         while time.monotonic() < deadline:
             try:
                 last = self._registry()

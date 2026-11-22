@@ -54,7 +54,7 @@ class DeploymentRun(AcceptanceRun):
 
     def _health(self, service):
         url = f"http://127.0.0.1:{HEALTH[service]}/actuator/health"
-        output = self._compose("exec", "-T", service, "curl", "-sS", "-w", "\n%{http_code}", url)
+        output = self._compose("exec", "-T", service, "curl", "-sS", "--max-time", "45", "-w", "\n%{http_code}", url)
         body, status = output.rsplit("\n", 1)
         return int(status), json.loads(body)
 

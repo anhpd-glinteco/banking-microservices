@@ -8,6 +8,7 @@ x-app: &app
 
 x-app-env: &app-env
   JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -Xmx256m"
+  SPRING_JPA_SHOW_SQL: 'false'
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
   MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
 

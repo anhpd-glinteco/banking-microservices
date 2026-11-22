@@ -14,7 +14,7 @@ COPY ${SERVICE}/src app/src
 RUN --mount=type=cache,id=bank-th8-maven,target=/root/.m2/repository,sharing=locked \
     find /root/.m2/repository -type f -size 0 \( -name '*.pom' -o -name '*.jar' \) -delete \
     && mvn -B -ntp -f bank-common/pom.xml org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
-        -Dfile=bank-common/target/bank-common-0.0.1-SNAPSHOT.jar -DpomFile=bank-common/pom.xml \
+        -Dfile=/src/bank-common/target/bank-common-0.0.1-SNAPSHOT.jar -DpomFile=/src/bank-common/pom.xml \
     && mvn -B -ntp -f app/pom.xml -DskipTests package \
     && cp app/target/*.jar /app.jar \
     && jar tf /app.jar > /dev/null
