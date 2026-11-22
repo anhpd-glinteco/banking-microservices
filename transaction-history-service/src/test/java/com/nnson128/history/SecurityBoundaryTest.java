@@ -45,7 +45,7 @@ class SecurityBoundaryTest {
         when(decoder.decode("valid")).thenReturn(Jwt.withTokenValue("valid").header("alg", "RS256")
                 .subject("1").claim("roles", List.of("USER")).build());
         mvc.perform(get("/api/history/number/001").header("Authorization", "Bearer valid")).andExpect(status().isOk());
-        verify(service).forAccountNumber("001");
+        verify(service).forAccountNumber("001", null);
     }
 
     @Test

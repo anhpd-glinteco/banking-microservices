@@ -177,6 +177,19 @@ class AccountPreflightTest {
     }
 
     @Test
+    void missingDiscoveredServiceInstanceIsSafe503() {
+        org.springframework.http.client.ClientHttpRequestFactory requestFactory = (uri, method) -> {
+            throw new IllegalArgumentException("No servers available for service: account-service");
+        };
+        AccountClient client = new AccountClient(org.springframework.web.client.RestClient.builder()
+                .requestFactory(requestFactory).build());
+
+        assertThrows(com.nnson128.transfer.exception.AccountServiceUnavailableException.class,
+                () -> client.requireAccount("002"));
+        assertNoWrites();
+    }
+
+    @Test
     void clientEncodesAccountNumberAsSinglePathVariable() {
         AccountClient client = new AccountClient("http://127.0.0.1:" + server.getAddress().getPort());
         client.requireAccount("00/1 +?#");

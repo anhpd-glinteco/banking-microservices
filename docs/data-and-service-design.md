@@ -11,9 +11,9 @@ Bản nộp dùng dữ liệu giả trong MySQL riêng; kết quả kiểm tra l
 | Transaction History Service | Lưu Kafka event, truy vấn lịch sử đúng accountNumber | 8084 |
 | Notification Service | Email/WebSocket từ event; không chạy trong fixture, không gửi SMTP | 8083 |
 | API Gateway | Định tuyến client | 8080 |
-| Discovery Service | Eureka discovery | 8761 |
+| Discovery Service | Eureka registry used by Spring Cloud LoadBalancer | 8761 |
 
-`bank-common` là thư viện DTO/event/exception, không phải service. Frontend React/Vite gọi API; fixture gọi trực tiếp ba service nghiệp vụ, không cần Gateway/Discovery/Notification.
+`bank-common` là thư viện DTO/event/exception, không phải service. Frontend React/Vite gọi API. Fixture TH4 ban đầu gọi trực tiếp ba service nghiệp vụ; fixture TH7 bổ sung Gateway, Eureka và hai Account instance để kiểm chứng discovery và failover, vẫn tắt xử lý Notification bên ngoài.
 
 ## 2. Database từng service
 
@@ -110,7 +110,7 @@ Các API nền giữ nguyên: Account POST /login{username,password}→AccountDT
 
 ## 6. Giao tiếp liên service
 
-Transfer REST Account hai lần trước khi lưu transaction; URL cấu hình ACCOUNT_SERVICE_URL, RestTemplate có connect2s/read3s. Account404 map404; dependency ngừng/timeout/response sai map safe503, không thêm transaction. Luồng Controller→Service→Repository/fragment JPA→DB giữ nguyên; query/pagination User chạy SQL LIMIT/OFFSET, không findAll rồi chia trang RAM. Native long OFFSET tránh tràn giới hạn int của JPA khi page lớn.
+Transfer gọi Account qua Eureka service ID `account-service` hai lần trước khi lưu transaction; Spring Cloud LoadBalancer chọn instance. Transfer dùng RestClient, History dùng RestTemplate; cả hai đặt connect timeout 2s/read timeout 3s và không có địa chỉ Account cố định. Account404 map404; dependency ngừng/timeout/response sai map safe503, không thêm transaction. TH7 giữ API History hiện tại, cho phép nhận `X-TH7-Request-Id` dạng UUID hợp lệ và chỉ chuyển tiếp header này tới Account để kiểm chứng request đi qua các instance. Luồng Controller→Service→Repository/fragment JPA→DB giữ nguyên; query/pagination User chạy SQL LIMIT/OFFSET, không findAll rồi chia trang RAM. Native long OFFSET tránh tràn giới hạn int của JPA khi page lớn.
 
 Kafka topic `banking.transaction`: TRANSACTION_CREATED→Account debit; MONEY_DEDUCTED→Account credit; TRANSFER_COMPLETED→Transfer SUCCESS. History consumer riêng archive các event này và filter owner. Compensation/failed event phục vụ nhánh saga lỗi; `banking.account` chứa balance change cho Notification. REST200/PROCESSING chỉ là accepted; phải poll eventual SUCCESS và SQL balance/history. Kafka gửi bất đồng bộ, không nằm trong transaction DB cục bộ.
 
