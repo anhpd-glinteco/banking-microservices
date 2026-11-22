@@ -91,8 +91,11 @@ class AcceptanceRun:
         token: str | None = None,
         body: object | None = None,
         request_id: str | None = None,
+        origin: str | None = None,
     ) -> HttpResult:
         headers = {"Accept": "application/json"}
+        if origin:
+            headers["Origin"] = origin
         if token:
             headers["Authorization"] = f"Bearer {token}"
         if request_id:

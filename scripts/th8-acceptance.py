@@ -31,8 +31,10 @@ class DeploymentRun(AcceptanceRun):
         self.mail_checks = 0
         self.transaction_id = None
 
-    def _request(self, *args, **kwargs):
-        response = super()._request(*args, **kwargs)
+    def _request(self, method, path, **kwargs):
+        if method == "POST" and kwargs.get("base") == self.frontend:
+            kwargs.setdefault("origin", self.frontend)
+        response = super()._request(method, path, **kwargs)
         entry = self.requests[-1]
         entry["path"] = re.sub(r"(/api/history/number/)[^/]+", r"\1<account>", entry["path"])
         return response
@@ -176,6 +178,9 @@ class DeploymentRun(AcceptanceRun):
         after = self._snapshot()
         self._require(before == after, "Data changed when the whole stack was recreated.")
         self._capture_ps("compose-ps-after-recreate.txt")
+        foreign = self._request("POST", "/api/accounts/login", base=self.frontend,
+                                body={}, origin="http://unrelated.example.invalid")
+        self._require(foreign.status == 403, "The frontend proxy allowed a foreign Origin.")
         transaction = self._transfer(501, frontend=True)
         return {"before": before, "after": after, "successful_history_transaction_via_nginx": transaction}
 
