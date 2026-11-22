@@ -1,0 +1,38 @@
+[
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[1]",
+    "result": "PASS"
+  },
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[2]",
+    "result": "PASS"
+  },
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[3]",
+    "result": "PASS"
+  },
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[4]",
+    "result": "PASS"
+  },
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[5]",
+    "result": "PASS"
+  },
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[6]",
+    "result": "PASS"
+  },
+  {
+    "test": "invalidUpstreamBodyIsSafe503(String)[7]",
+    "result": "PASS"
+  },
+  {
+    "test": "readTimeoutIsSafe503(String)[1]",
+    "result": "PASS"
+  },
+  {
+    "test": "readTimeoutIsSafe503(String)[2]",
+    "result": "PASS"
+  }
+]
