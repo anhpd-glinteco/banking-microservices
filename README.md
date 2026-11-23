@@ -58,21 +58,41 @@ docker info
 docker compose version
 ```
 
-### 2. Tải mã nguồn và khởi động
+### 2. Vào đúng thư mục mã nguồn TH8
 
-Nhánh mặc định `main` chứa phần nền của dự án. Lệnh clone bên dưới lấy `feat/bank-service-discovery`, nhánh đã tích hợp TH8 và có đủ script để chạy demo. Docker build backend bằng Java 17 và build frontend trong image. Java, Maven, Node.js và MySQL trên máy chỉ cần khi bạn chọn quy trình phát triển hoặc kiểm thử riêng tương ứng.
+**Nếu tải từ GitHub**, clone nhánh đã tích hợp TH8. Nhánh mặc định `main` chứa phần nền dự án.
 
 ```bash
 git clone --branch feat/bank-service-discovery https://github.com/anhpd-glinteco/banking-microservices.git
 cd banking-microservices
+```
+
+**Nếu dùng bản ZIP**, giải nén rồi tìm thư mục chứa đồng thời `compose.th8.yml` và `scripts/th8.sh`. Thư mục đó là nơi chạy lệnh. Có thể cần mở thêm một thư mục con sau khi giải nén.
+
+Trên Windows, giả sử thư mục chứa hai tệp trên là `D:\Projects\bank-th8`. Mở PowerShell và xem tên distro WSL bằng `wsl -l -v`. Nếu distro đã cấu hình Docker là Ubuntu, vào thẳng thư mục dự án như sau:
+
+```powershell
+wsl -d Ubuntu --cd /mnt/d/Projects/bank-th8
+```
+
+Thay `Ubuntu` bằng tên distro đang dùng và thay đường dẫn ví dụ bằng thư mục đã giải nén. Nếu đã ở trong WSL, dùng `cd /mnt/d/Projects/bank-th8`. Ổ `D:` được truy cập qua `/mnt/d` trong WSL. Nếu đường dẫn có dấu cách, đặt đường dẫn trong dấu ngoặc kép.
+
+### 3. Khởi động hệ thống
+
+Chạy các lệnh sau **trong WSL hoặc Linux**. Nếu `ls` báo thiếu tệp, kiểm tra lại thư mục hiện tại trước khi chạy tiếp.
+
+```bash
+pwd
+ls compose.th8.yml scripts/th8.sh
+docker info
 bash scripts/th8.sh init demo01
 bash scripts/th8.sh up demo01
 bash scripts/th8.sh status demo01
 ```
 
-`init` tạo cấu hình, mật khẩu và khóa JWT ở ngoài repo. `up` build image, khởi tạo database trên volume mới và chờ healthcheck. Lần đầu cần kết nối Internet để tải image và dependencies. Khi chạy lại, dùng cùng ID `demo01` để tái sử dụng cấu hình và dữ liệu.
+`init` tạo cấu hình, mật khẩu và khóa JWT ở ngoài repo. Lần đầu cần Internet để tải image và dependencies. Docker build backend bằng Java 17 và build frontend trong image. `up` khởi tạo database trên volume mới và đợi healthcheck.
 
-### 3. Mở ứng dụng
+### 4. Mở ứng dụng
 
 | Địa chỉ | Công dụng |
 | --- | --- |
@@ -85,7 +105,7 @@ Mở frontend, chọn đăng ký và dùng email thử nghiệm như `demo@examp
 
 ### Mở lại một lượt demo đã có
 
-Khởi động Docker Engine, vào thư mục repo rồi chạy `bash scripts/th8.sh up demo01`. Dùng đúng ID đã tạo trước đó để giữ dữ liệu và cấu hình. Sau khi stack healthy, mở lại [frontend](http://127.0.0.1:25173).
+Khởi động Docker Engine, vào thư mục repo rồi chạy `bash scripts/th8.sh up demo01`. Dùng lại cùng distro, Docker Engine và ID đã tạo để giữ dữ liệu và cấu hình. Stack chỉ xuất hiện trong Docker Desktop → Containers khi distro đang dùng Engine của Docker Desktop. Nếu Docker chạy riêng trong WSL, xem stack bằng lệnh `status` trong distro đó. Sau khi stack healthy, mở lại [frontend](http://127.0.0.1:25173).
 
 ### Dùng lệnh Docker Compose trực tiếp
 
