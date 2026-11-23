@@ -158,10 +158,3 @@ Lệnh `test` chủ động dừng và khởi động lại dịch vụ trong pr
 | TH6 | [Thiết kế tích hợp REST](https://github.com/anhpd-glinteco/banking-microservices/blob/feat/bank-service-discovery/integration/integration-design.md) · [Kết quả kiểm thử](https://github.com/anhpd-glinteco/banking-microservices/blob/feat/bank-service-discovery/integration/test-results.md) |
 | TH7 | [Service Discovery và kết quả kiểm thử](https://github.com/anhpd-glinteco/banking-microservices/blob/feat/bank-service-discovery/docs/th7-service-discovery.md) |
 
-## Project origin
-
-Based on a source snapshot of [sonnn128/bank-system-microservice](https://github.com/sonnn128/bank-system-microservice), commit `b44d77e`, continued for coursework and learning. Existing package names are retained to reflect that origin.
-
-This publication starts a new Git history to avoid carrying embedded SMTP credentials from the source history. Supply your own credentials locally. Previously exposed credentials must be revoked by their owner; deleting them here does not revoke them.
-
-No project license file was present in the imported snapshot. No new license is asserted for the original work; confirm the original author's terms before redistribution or other reuse.
