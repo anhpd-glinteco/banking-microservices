@@ -75,7 +75,7 @@ public class AccountService {
                 .build());
 
         } catch (Exception e) {
-            log.error("Transfer failed at Debit stage: {}", e.getMessage());
+            log.error("Transfer failed at debit stage ({})", e.getClass().getSimpleName());
             kafkaProducer.sendEvent("banking.transaction", TransferFailedEvent.builder()
                     .transactionId(event.getTransactionId())
                     .reason(e.getMessage())
@@ -121,7 +121,7 @@ public class AccountService {
                 .build());
 
         } catch (Exception e) {
-            log.error("Transfer failed at Credit stage: {}", e.getMessage());
+            log.error("Transfer failed at credit stage ({})", e.getClass().getSimpleName());
             // Fail -> Compensate Sender
             kafkaProducer.sendEvent("banking.transaction", CompensationEvent.builder()
                     .transactionId(event.getTransactionId())
@@ -147,7 +147,7 @@ public class AccountService {
             account.setBalance(account.getBalance().add(event.getAmount()));
             accountRepository.save(account);
             
-            log.info("Compensated account {} with {}", event.getFromAccountId(), event.getAmount());
+            log.info("Compensation applied.");
 
              // Publish Balance Changed
             kafkaProducer.sendEvent("banking.account", BalanceChangedEvent.builder()
@@ -158,7 +158,7 @@ public class AccountService {
                 .build());
 
         } catch (Exception e) {
-            log.error("CRITICAL: Failed to compensate account {}. Manual intervention required.", event.getFromAccountId(), e);
+            log.error("Compensation failed ({}). Manual intervention required.", e.getClass().getSimpleName());
         }
     }
 
@@ -345,7 +345,7 @@ public class AccountService {
         // Generate OTP and send via Kafka
         otpService.generateOtp(email);
         
-        log.info("Password reset OTP sent to email: {}", email);
+        log.info("Password reset OTP event published.");
     }
 
     public void resetPassword(String email, String otp, String newPassword) {
@@ -362,7 +362,7 @@ public class AccountService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         
-        log.info("Password reset successful for email: {}", email);
+        log.info("Password reset completed.");
     }
 
     public java.util.Map<String, Boolean> checkUserExists(String email, String phone, String identificationNumber) {

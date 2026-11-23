@@ -1,59 +1,86 @@
-## Nộp bài thực hành 6
+# Banking Microservices
 
-Bản này dùng luồng chuyển tiền trên mốc `ba92b99`. Transfer và History gọi Account qua URL được cấu hình, trong môi trường TH6 tắt Eureka.
+Banking Microservices là dự án thực hành của Nhóm 14, mô phỏng các nghiệp vụ ngân hàng trên kiến trúc microservices. Người dùng thao tác qua giao diện web. Các dịch vụ xử lý yêu cầu đồng bộ qua REST và trao đổi sự kiện giao dịch qua Kafka.
 
-- [Thiết kế tích hợp](integration/integration-design.md) và [hợp đồng API](integration/api-contract.md)
-- [Collection Postman](integration/postman/integration-tests.json) và [kết quả kiểm thử](integration/test-results.md)
+## Chức năng chính
 
-Từ thư mục source đã giải nén, dùng Bash trên Linux hoặc WSL có Java 17, Maven, Docker Engine với Compose, OpenSSL và Python 3:
+- **Người dùng và tài khoản** — đăng ký bằng OTP, đăng nhập bằng JWT và xem thông tin tài khoản.
+- **Chuyển tiền** — tra cứu người nhận, gửi lệnh chuyển tiền và theo dõi trạng thái xử lý.
+- **Lịch sử giao dịch** — tra cứu giao dịch theo tài khoản và quyền truy cập của người dùng.
+- **Khoản vay** — gửi yêu cầu vay, theo dõi khoản vay và xử lý phê duyệt hoặc trả nợ theo vai trò.
+
+## Kiến trúc
+
+| Thành phần | Vai trò |
+| --- | --- |
+| Frontend | React/Vite chạy sau Nginx, gọi API cùng origin qua Gateway |
+| API Gateway và Eureka | Định tuyến API và khám phá các instance dịch vụ |
+| Account | Quản lý người dùng, tài khoản, khoản vay và OTP |
+| Transfer và Transaction History | Xử lý chuyển tiền và tra cứu lịch sử theo quyền truy cập |
+| Notification | Tiêu thụ sự kiện Kafka và gửi thư thử nghiệm đến Mailpit |
+
+Transfer và History tìm Account qua Eureka và Spring Cloud LoadBalancer. Hai instance Account dùng chung schema sở hữu bởi Account. Transfer và History có schema riêng. MySQL, Kafka và Redis sử dụng named volume theo từng lượt triển khai. [Sơ đồ và thiết kế triển khai](docs/th8/deployment-design.md)
+
+## Cài đặt và chạy trên máy
+
+### 1. Chuẩn bị môi trường
+
+- **Windows** — dùng WSL 2 và chạy các lệnh bên dưới trong terminal Linux. Nếu dùng Docker Desktop, bật tích hợp cho distro WSL đang sử dụng. [Hướng dẫn Docker Desktop và WSL 2](https://docs.docker.com/desktop/features/wsl/)
+- **Linux** — cài Docker Engine và Docker Compose plugin theo bản phân phối. [Hướng dẫn cài Docker Engine](https://docs.docker.com/engine/install/)
+
+Terminal cần có Git, Bash và OpenSSL. Kiểm tra Docker có thể kết nối đến Engine trước khi chạy.
 
 ```bash
-bash scripts/th6.sh run
-bash scripts/th6.sh status <run-id>
-bash scripts/th6.sh stop <run-id>
+git --version
+openssl version
+docker info
+docker compose version
 ```
 
-Lệnh `run` tạo khóa JWT và tài khoản giả, dựng fixture, rồi dùng image Newman chạy ba thư mục trong collection. Account, Transfer và History lần lượt dùng cổng loopback 28081, 28082 và 28084. `TH6_ACCOUNT_PORT`, `TH6_TRANSFER_PORT` và `TH6_HISTORY_PORT` có thể đổi trước khi tạo lượt chạy mới. Các cổng MySQL, Kafka và Redis tương ứng là 33306, 59092 và 36379, có thể đổi qua `TH6_MYSQL_PORT`, `TH6_KAFKA_PORT` và `TH6_REDIS_PORT`. Mỗi lượt có Compose project và volume riêng. Lệnh `stop` giữ volume.
+### 2. Tải mã nguồn và khởi động
 
-Khi chạy thủ công trong Postman, đặt `username`, `password`, `sender`, `recipient` và `missing` theo tài khoản giả. Dùng Collection Runner cho thư mục **01 Success** để thực thi bước chờ trạng thái và lịch sử. Chạy **02 Missing account** khi Account còn hoạt động và **03 Provider unavailable** sau khi dừng Account của fixture. Hai thư mục lỗi dùng JWT do thư mục đầu lấy.
+Các lệnh sau tải nhánh chứa cấu hình triển khai hiện tại. Docker build backend bằng Java 17 và build frontend trong image. Java, Maven, Node.js và MySQL trên máy chỉ cần khi bạn chọn quy trình phát triển hoặc kiểm thử riêng tương ứng.
 
-Account được để ở trạng thái dừng sau ca 503. Lệnh `bash scripts/th6.sh test <run-id>` khởi động lại Account trước khi chạy lại bộ kiểm thử.
-
----
-
-### How to run project
-```
-1. git clone <repo>
-2. cd <repo>
-3. cp .env.example .env
-4. Provision the service databases explicitly before starting Java services:
-   see docs/database-migration.md (fixture rehearsal; no real-data migration is automatic).
-5. docker compose --env-file .env up -d
+```bash
+git clone --branch feat/bank-compose-deployment https://github.com/anhpd-glinteco/banking-microservices.git
+cd banking-microservices
+bash scripts/th8.sh init demo01
+bash scripts/th8.sh up demo01
+bash scripts/th8.sh status demo01
 ```
 
+`init` tạo cấu hình, mật khẩu và khóa JWT ở ngoài repo. `up` build image, khởi tạo database trên volume mới và chờ healthcheck. Lần đầu cần kết nối Internet để tải image và dependencies. Khi chạy lại, dùng cùng ID `demo01` để tái sử dụng cấu hình và dữ liệu.
+
+### 3. Mở ứng dụng
+
+| Địa chỉ | Công dụng |
+| --- | --- |
+| [Frontend](http://127.0.0.1:25173) | Đăng ký, đăng nhập và thao tác trên giao diện |
+| [Gateway health](http://127.0.0.1:28080/actuator/health) | Kiểm tra sức khỏe Gateway |
+| [Eureka](http://127.0.0.1:28761) | Xem trạng thái đăng ký, gồm hai instance Account |
+| [Mailpit](http://127.0.0.1:28025) | Đọc OTP gửi đến địa chỉ thử nghiệm |
+
+Mở frontend, chọn đăng ký và dùng email thử nghiệm như `demo@example.invalid`. Lấy OTP từ Mailpit, hoàn tất đăng ký rồi đăng nhập. Để kiểm thử chuyển tiền với số dư mẫu, chạy bộ kiểm thử bên dưới. Bộ kiểm thử tự tạo dữ liệu giả cho lượt chạy.
+
+## Kiểm thử và vận hành
+
+```bash
+# Chạy ca triển khai, failover và phục hồi trên môi trường thử riêng. Cần Python 3.
+bash scripts/th8.sh test demo01
+
+# Chạy kiểm tra Maven. Cần Java 17 và Maven.
+bash scripts/th8.sh verify demo01
+
+# Dừng stack và giữ volume. Dùng lại cùng ID để đọc dữ liệu sau khi dựng lại.
+bash scripts/th8.sh down demo01
 ```
-bank-common
-1. discovery
-2. api-gw
-3. account
-4. notification
-5. transtraction
-6. transfer
 
-```
-mvn -B -ntp -f bank-common/pom.xml install
+Lệnh `test` chủ động dừng và khởi động lại dịch vụ trong project đã chọn. Xem [hướng dẫn vận hành](docs/th8/operation-guide.md), [ca nghiệm thu](docs/th8/deployment-test-cases.md) và [phân tích sự cố](docs/th8/failure-analysis.md).
 
-TH4 database ownership, required environment variables, backup/copy/restore guards and
-checks: [docs/database-migration.md](docs/database-migration.md).
+## Tài liệu các tuần trước
 
-## TH4 submission
-
-Start with [the ten-section design and reproduction commands](docs/data-and-service-design.md) and [the evidence index](evidence/README.md). Run section 9 from the repository root with Java 17, Maven, Node 22, PowerShell 7 and Docker available. The isolated fixture uses synthetic data and does not run SMTP.
-
-Evidence collected on 2026-10-19/20: 46 unit/web tests, 8 MySQL integration tests and 41 E2E checks passed. Packaging is not a new runtime test. Browser UI and remote CI were not run. Security and DB/Kafka atomicity limitations remain in section 10.
-
-## TH7 service discovery
-
-Transfer and History resolve Account through Eureka and Spring Cloud LoadBalancer. The isolated TH7 fixture starts two Account instances and runs discovery, failover, authorization, transfer/history, and dependency-outage checks. See [the architecture, scenarios, and run guide](docs/th7-service-discovery.md).
-
-Run `bash scripts/th7.sh run` from the repository in a WSL/Linux shell with Docker Compose, Java 17, Maven, OpenSSL, and Python 3 available. The runner creates a private fixture ID and prints the matching `stop` command; `stop` preserves the fixture's data volumes.
+| Tuần | Tài liệu |
+| --- | --- |
+| TH4 | [Thiết kế dữ liệu và dịch vụ](docs/data-and-service-design.md) · [Hướng dẫn dữ liệu](docs/database-migration.md) · [Bằng chứng](evidence/README.md) |
+| TH6 | [Thiết kế tích hợp REST](integration/integration-design.md) · [Kết quả kiểm thử](integration/test-results.md) |
+| TH7 | [Service Discovery và kết quả kiểm thử](docs/th7-service-discovery.md) |

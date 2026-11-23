@@ -26,9 +26,9 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-            log.info("Email sent to: {}", to);
+            log.info("Email sent.");
         } catch (Exception e) {
-            log.error("Failed to send email to {}", to, e);
+            log.error("SMTP send failed ({})", e.getClass().getSimpleName());
         }
     }
 
@@ -48,9 +48,9 @@ public class EmailService {
             helper.setText(htmlContent, true); // true = isHtml
             
             mailSender.send(message);
-            log.info("HTML OTP Email sent to: {}", to);
+            log.info("OTP email sent.");
         } catch (Exception e) {
-            log.error("Failed to send HTML OTP email to {}", to, e);
+            log.error("SMTP OTP send failed ({})", e.getClass().getSimpleName());
             throw new RuntimeException(e); // Rethrow to catch in listener for detailed logging if preferred
         }
     }
@@ -96,9 +96,9 @@ public class EmailService {
             helper.setText(htmlContent, true);
             
             mailSender.send(message);
-            log.info("Balance change email sent to: {} (Type: {})", to, transactionType);
+            log.info("Balance change email sent.");
         } catch (Exception e) {
-            log.error("Failed to send balance change email to {}", to, e);
+            log.error("SMTP balance change send failed ({})", e.getClass().getSimpleName());
         }
     }
 }

@@ -12,3 +12,5 @@ mvnw.cmd
 .classpath
 .project
 data
+/output/
+__pycache__/

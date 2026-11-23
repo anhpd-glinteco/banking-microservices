@@ -1,0 +1,27 @@
+FROM maven:3.9.11-eclipse-temurin-17 AS common
+WORKDIR /src
+ENV MAVEN_OPTS="-XX:ActiveProcessorCount=2 -Xmx512m"
+COPY bank-common/pom.xml bank-common/pom.xml
+COPY bank-common/src bank-common/src
+RUN --mount=type=cache,id=bank-th8-maven,target=/root/.m2/repository,sharing=locked \
+    find /root/.m2/repository -type f -size 0 \( -name '*.pom' -o -name '*.jar' \) -delete \
+    && mvn -B -ntp -f bank-common/pom.xml -DskipTests package
+
+FROM common AS build
+ARG SERVICE
+COPY ${SERVICE}/pom.xml app/pom.xml
+COPY ${SERVICE}/src app/src
+RUN --mount=type=cache,id=bank-th8-maven,target=/root/.m2/repository,sharing=locked \
+    find /root/.m2/repository -type f -size 0 \( -name '*.pom' -o -name '*.jar' \) -delete \
+    && mvn -B -ntp -f bank-common/pom.xml org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
+        -Dfile=/src/bank-common/target/bank-common-0.0.1-SNAPSHOT.jar -DpomFile=/src/bank-common/pom.xml \
+    && mvn -B -ntp -f app/pom.xml -DskipTests package \
+    && cp app/target/*.jar /app.jar \
+    && jar tf /app.jar > /dev/null
+
+FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache curl && addgroup -g 10001 bank && adduser -D -H -u 10001 -G bank bank
+WORKDIR /app
+COPY --from=build /app.jar /app/app.jar
+USER 10001:10001
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

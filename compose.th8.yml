@@ -1,0 +1,254 @@
+x-app: &app
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-app-env: &app-env
+  JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -Xmx256m"
+  SPRING_JPA_SHOW_SQL: 'false'
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
+
+x-client-env: &client-env
+  <<: *app-env
+  EUREKA_HOST: discovery-service
+  EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+  EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: "5"
+  EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: "15"
+
+x-db-env: &db-env
+  <<: *client-env
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  SECURITY_PUBLIC_KEY: /run/secrets/public.pem
+
+x-db-dependencies: &db-dependencies
+  discovery-service: {condition: service_healthy}
+  mysql: {condition: service_healthy}
+  kafka: {condition: service_healthy}
+
+x-account-env: &account-env
+  <<: *db-env
+  ACCOUNT_DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?Run scripts/th8.sh init}
+  SPRING_REDIS_HOST: redis
+  SPRING_REDIS_PORT: "6379"
+  SECURITY_PRIVATE_KEY: /run/secrets/private.pem
+  TH7_TRACE_ENABLED: "true"
+
+x-account: &account
+  <<: *app
+  image: ${COMPOSE_PROJECT_NAME}-account:th8
+  build:
+    context: .
+    dockerfile: Dockerfile.th8
+    args: {SERVICE: account-service}
+  secrets: [public.pem, private.pem]
+  depends_on:
+    <<: *db-dependencies
+    redis: {condition: service_healthy}
+  healthcheck: &account-health
+    test: [CMD, curl, -fsS, "http://127.0.0.1:8081/actuator/health"]
+    interval: 5s
+    timeout: 4s
+    retries: 24
+    start_period: 30s
+
+services:
+  mysql:
+    <<: *app
+    build: database/th8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run scripts/th8.sh init}
+      ACCOUNT_DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?Run scripts/th8.sh init}
+      TRANSFER_DB_PASSWORD: ${TRANSFER_DB_PASSWORD:?Run scripts/th8.sh init}
+      HISTORY_DB_PASSWORD: ${HISTORY_DB_PASSWORD:?Run scripts/th8.sh init}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$${ACCOUNT_DB_PASSWORD}" mysql --protocol=TCP -h 127.0.0.1 -u account_app bank_account -e "SELECT 1"
+          && MYSQL_PWD="$${TRANSFER_DB_PASSWORD}" mysql --protocol=TCP -h 127.0.0.1 -u transfer_app bank_transfer -e "SELECT 1"
+          && MYSQL_PWD="$${HISTORY_DB_PASSWORD}" mysql --protocol=TCP -h 127.0.0.1 -u history_app bank_history -e "SELECT 1"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  kafka:
+    <<: *app
+    image: apache/kafka:4.0.1
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_HEAP_OPTS: '-Xms256m -Xmx512m'
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_NUM_PARTITIONS: "1"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes: [kafka-data:/var/lib/kafka/data]
+    healthcheck:
+      test: [CMD, /opt/kafka/bin/kafka-topics.sh, --bootstrap-server, "localhost:9092", --list]
+      interval: 10s
+      timeout: 8s
+      retries: 15
+
+  redis:
+    <<: *app
+    image: redis:7.4.2
+    command: [redis-server, --appendonly, "yes"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  mailpit:
+    <<: *app
+    image: axllent/mailpit:v1.27.4
+    ports: ["127.0.0.1:${MAILPIT_HOST_PORT:-28025}:8025"]
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+
+  account-service-a:
+    <<: *account
+    environment:
+      <<: *account-env
+      EUREKA_INSTANCE_HOSTNAME: account-service-a
+      EUREKA_INSTANCE_INSTANCE_ID: account-service-a:8081
+      TH7_INSTANCE_ID: account-service-a
+
+  account-service-b:
+    <<: *account
+    environment:
+      <<: *account-env
+      EUREKA_INSTANCE_HOSTNAME: account-service-b
+      EUREKA_INSTANCE_INSTANCE_ID: account-service-b:8081
+      TH7_INSTANCE_ID: account-service-b
+
+  discovery-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.th8
+      args: {SERVICE: discovery-service}
+    environment:
+      <<: *app-env
+      EUREKA_SERVER_ENABLE_SELF_PRESERVATION: "false"
+      EUREKA_SERVER_RESPONSE_CACHE_UPDATE_INTERVAL_MS: "1000"
+    ports: ["127.0.0.1:${EUREKA_HOST_PORT:-28761}:8761"]
+    healthcheck:
+      <<: *account-health
+      test: [CMD, curl, -fsS, "http://127.0.0.1:8761/actuator/health"]
+
+  api-gateway:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.th8
+      args: {SERVICE: api-gateway}
+    environment:
+      <<: *client-env
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
+    depends_on:
+      discovery-service: {condition: service_healthy}
+    ports: ["127.0.0.1:${GATEWAY_HOST_PORT:-28080}:8080"]
+    healthcheck:
+      <<: *account-health
+      test: [CMD, curl, -fsS, "http://127.0.0.1:8080/actuator/health"]
+
+  transfer-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.th8
+      args: {SERVICE: transfer-service}
+    environment:
+      <<: *db-env
+      TRANSFER_DB_PASSWORD: ${TRANSFER_DB_PASSWORD:?Run scripts/th8.sh init}
+    depends_on: *db-dependencies
+    secrets: [public.pem]
+    healthcheck:
+      <<: *account-health
+      test: [CMD, curl, -fsS, "http://127.0.0.1:8082/actuator/health"]
+
+  transaction-history-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.th8
+      args: {SERVICE: transaction-history-service}
+    environment:
+      <<: *db-env
+      HISTORY_DB_PASSWORD: ${HISTORY_DB_PASSWORD:?Run scripts/th8.sh init}
+    depends_on: *db-dependencies
+    secrets: [public.pem]
+    healthcheck:
+      <<: *account-health
+      test: [CMD, curl, -fsS, "http://127.0.0.1:8084/actuator/health"]
+
+  notification-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.th8
+      args: {SERVICE: notification-service}
+    environment:
+      <<: *client-env
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SECURITY_PUBLIC_KEY: /run/secrets/public.pem
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: "1025"
+      MAIL_USERNAME: bank@example.test
+      MAIL_SMTP_AUTH: "false"
+      MAIL_SMTP_STARTTLS: "false"
+    depends_on:
+      discovery-service: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+      mailpit: {condition: service_healthy}
+    secrets: [public.pem]
+    healthcheck:
+      <<: *account-health
+      test: [CMD, curl, -fsS, "http://127.0.0.1:8083/actuator/health"]
+
+  frontend:
+    <<: *app
+    build:
+      context: frontend
+      dockerfile: Dockerfile.th8
+    depends_on:
+      api-gateway: {condition: service_healthy}
+    ports: ["127.0.0.1:${FRONTEND_HOST_PORT:-25173}:5173"]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:5173/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+secrets:
+  public.pem:
+    file: ${TH8_KEY_DIR:?Run scripts/th8.sh init}/public.pem
+  private.pem:
+    file: ${TH8_KEY_DIR:?Run scripts/th8.sh init}/private.pem
+
+volumes:
+  mysql-data:
+  kafka-data:
+  redis-data:

@@ -35,7 +35,7 @@ public class TransferKafkaConsumer {
                 transferService.handleTransferFailed(event);
             }
         } catch (Exception e) {
-            log.error("Error in TransferConsumer: {}", message, e);
+            log.error("Transfer Kafka processing failed ({})", e.getClass().getSimpleName());
         }
     }
 }
