@@ -1,0 +1,148 @@
+{
+  "run_id": "th6-fixed-url-demo",
+  "utc": "2026-11-22T18:03:01.480617+00:00",
+  "result": "PASS",
+  "error": null,
+  "cases": [
+    {
+      "folder": "01 Success",
+      "newman_exit": 0,
+      "requests": [
+        {
+          "request": "Đăng nhập",
+          "http": 200,
+          "assertions": [
+            {
+              "name": "HTTP 200 và JWT",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "request": "Gửi lệnh",
+          "http": 200,
+          "assertions": [
+            {
+              "name": "HTTP 200",
+              "pass": true
+            },
+            {
+              "name": "PROCESSING có mã giao dịch",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "request": "Đợi SUCCESS",
+          "http": 200,
+          "assertions": [
+            {
+              "name": "SUCCESS trong 60 giây",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "request": "Đợi lịch sử",
+          "http": 200,
+          "assertions": [
+            {
+              "name": "Lịch sử có mã giao dịch",
+              "pass": true
+            }
+          ]
+        }
+      ],
+      "result": "PASS",
+      "transaction_id": "27b274df-ffaa-42d9-a2d0-7ea5d1ea63d6",
+      "balances_before": [
+        "50000000.00",
+        "0.00"
+      ],
+      "balances_after": [
+        "49999000.00",
+        "1000.00"
+      ]
+    },
+    {
+      "folder": "02 Missing account",
+      "newman_exit": 0,
+      "requests": [
+        {
+          "request": "Tài khoản nhận không tồn tại",
+          "http": 404,
+          "assertions": [
+            {
+              "name": "HTTP 404",
+              "pass": true
+            }
+          ]
+        }
+      ],
+      "result": "PASS",
+      "side_effects": {
+        "transfer_rows": 4,
+        "kafka_offsets": [
+          "banking.transaction:0:12"
+        ]
+      }
+    },
+    {
+      "folder": "03 Provider unavailable",
+      "newman_exit": 0,
+      "requests": [
+        {
+          "request": "Account Service đã dừng",
+          "http": 503,
+          "assertions": [
+            {
+              "name": "HTTP 503",
+              "pass": true
+            },
+            {
+              "name": "Thông báo lỗi phụ thuộc",
+              "pass": true
+            }
+          ]
+        }
+      ],
+      "result": "PASS",
+      "side_effects": {
+        "transfer_rows": 4,
+        "kafka_offsets": [
+          "banking.transaction:0:12"
+        ]
+      }
+    }
+  ],
+  "fixture_setup_http": [
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/otp/generate",
+      "status": 200,
+      "elapsed_ms": 19
+    },
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/users/register-with-otp",
+      "status": 200,
+      "elapsed_ms": 93
+    },
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/otp/generate",
+      "status": 200,
+      "elapsed_ms": 4
+    },
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/users/register-with-otp",
+      "status": 200,
+      "elapsed_ms": 67
+    }
+  ]
+}

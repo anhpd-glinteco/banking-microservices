@@ -1,3 +1,26 @@
+## Nộp bài thực hành 6
+
+Bản này dùng luồng chuyển tiền trên mốc `ba92b99`. Transfer và History gọi Account qua URL được cấu hình, trong môi trường TH6 tắt Eureka.
+
+- [Thiết kế tích hợp](integration/integration-design.md) và [hợp đồng API](integration/api-contract.md)
+- [Collection Postman](integration/postman/integration-tests.json) và [kết quả kiểm thử](integration/test-results.md)
+
+Từ thư mục source đã giải nén, dùng Bash trên Linux hoặc WSL có Java 17, Maven, Docker Engine với Compose, OpenSSL và Python 3:
+
+```bash
+bash scripts/th6.sh run
+bash scripts/th6.sh status <run-id>
+bash scripts/th6.sh stop <run-id>
+```
+
+Lệnh `run` tạo khóa JWT và tài khoản giả, dựng fixture, rồi dùng image Newman chạy ba thư mục trong collection. Account, Transfer và History lần lượt dùng cổng loopback 28081, 28082 và 28084. `TH6_ACCOUNT_PORT`, `TH6_TRANSFER_PORT` và `TH6_HISTORY_PORT` có thể đổi trước khi tạo lượt chạy mới. Các cổng MySQL, Kafka và Redis tương ứng là 33306, 59092 và 36379, có thể đổi qua `TH6_MYSQL_PORT`, `TH6_KAFKA_PORT` và `TH6_REDIS_PORT`. Mỗi lượt có Compose project và volume riêng. Lệnh `stop` giữ volume.
+
+Khi chạy thủ công trong Postman, đặt `username`, `password`, `sender`, `recipient` và `missing` theo tài khoản giả. Dùng Collection Runner cho thư mục **01 Success** để thực thi bước chờ trạng thái và lịch sử. Chạy **02 Missing account** khi Account còn hoạt động và **03 Provider unavailable** sau khi dừng Account của fixture. Hai thư mục lỗi dùng JWT do thư mục đầu lấy.
+
+Account được để ở trạng thái dừng sau ca 503. Lệnh `bash scripts/th6.sh test <run-id>` khởi động lại Account trước khi chạy lại bộ kiểm thử.
+
+---
+
 ### How to run project
 ```
 1. git clone <repo>
