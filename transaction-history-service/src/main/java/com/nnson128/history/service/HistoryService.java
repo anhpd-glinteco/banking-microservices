@@ -22,34 +22,45 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class HistoryService {
+    private static final java.util.regex.Pattern REQUEST_ID = java.util.regex.Pattern.compile(
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+
     private final HistoryRepository repository;
     private final RestTemplate accountRestTemplate;
     private final ObjectMapper objectMapper;
     private final EventMapper eventMapper;
 
-    @Value("${account.service.url:http://localhost:8081}")
-    private String accountServiceUrl;
-
     public List<HistoryLog> forAccountNumber(String accountNumber) {
+        return forAccountNumber(accountNumber, null);
+    }
+
+    public List<HistoryLog> forAccountNumber(String accountNumber, String requestId) {
         if (accountNumber == null || accountNumber.isBlank()) throw new BadHistoryRequestException();
-        authorizedAccount("/api/accounts/number/{account}", accountNumber);
+        authorizedAccount("/api/accounts/number/{account}", accountNumber, requestId);
         return repository.findOwnedByAccountNumber(accountNumber);
     }
 
     public List<HistoryLog> forLegacyAccountId(Long accountId) {
+        return forLegacyAccountId(accountId, null);
+    }
+
+    public List<HistoryLog> forLegacyAccountId(Long accountId, String requestId) {
         if (accountId == null || accountId <= 0) throw new BadHistoryRequestException();
-        JsonNode account = authorizedAccount("/api/accounts/{account}", accountId);
+        JsonNode account = authorizedAccount("/api/accounts/{account}", accountId, requestId);
         return repository.findOwnedByAccountNumber(account.get("accountNumber").asText());
     }
 
-    private JsonNode authorizedAccount(String path, Object account) {
+    private JsonNode authorizedAccount(String path, Object account, String requestId) {
         if (!(SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken authentication)) {
             throw new AuthenticationCredentialsNotFoundException("Authentication required");
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(authentication.getToken().getTokenValue());
+        if (requestId != null && REQUEST_ID.matcher(requestId).matches()) {
+            headers.set("X-TH7-Request-Id", requestId);
+        }
         try {
-            ResponseEntity<String> response = accountRestTemplate.exchange(accountServiceUrl + path,
+            ResponseEntity<String> response = accountRestTemplate.exchange("http://account-service" + path,
                     HttpMethod.GET, new HttpEntity<>(headers), String.class, account);
             if (response.getStatusCode().value() != 200) throw new HistoryDependencyException();
             JsonNode body = objectMapper.readTree(response.getBody());

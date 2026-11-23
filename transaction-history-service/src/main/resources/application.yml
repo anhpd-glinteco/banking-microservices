@@ -3,7 +3,6 @@ server:
 
 account:
   service:
-    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
     connect-timeout-ms: ${ACCOUNT_SERVICE_CONNECT_TIMEOUT_MS:2000}
     read-timeout-ms: ${ACCOUNT_SERVICE_READ_TIMEOUT_MS:3000}
 
@@ -33,7 +32,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
 
 management:
   endpoints:
