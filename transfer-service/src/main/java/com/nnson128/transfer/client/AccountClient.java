@@ -5,6 +5,7 @@ import com.nnson128.common.exception.ResourceNotFoundException;
 import com.nnson128.transfer.exception.AccountServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -27,11 +28,21 @@ public class AccountClient {
     private final RestClient client;
 
     @Autowired
-    public AccountClient(@Value("${account.service.url:http://localhost:8081}") String baseUrl) {
-        this(baseUrl, 2000, 3000);
+    public AccountClient(@LoadBalanced RestClient.Builder builder,
+            @Value("${account.service.connect-timeout-ms:2000}") int connectTimeout,
+            @Value("${account.service.read-timeout-ms:3000}") int readTimeout) {
+        this(builder, "http://account-service", connectTimeout, readTimeout);
     }
 
+    AccountClient(RestClient client) { this.client = client; }
+
+    AccountClient(String baseUrl) { this(baseUrl, 2000, 3000); }
+
     AccountClient(String baseUrl, int connectTimeout, int readTimeout) {
+        this(RestClient.builder(), baseUrl, connectTimeout, readTimeout);
+    }
+
+    private AccountClient(RestClient.Builder builder, String baseUrl, int connectTimeout, int readTimeout) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory() {
             @Override
             protected void prepareConnection(HttpURLConnection connection, String method) throws IOException {
@@ -41,7 +52,7 @@ public class AccountClient {
         };
         factory.setConnectTimeout(connectTimeout);
         factory.setReadTimeout(readTimeout);
-        client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
+        client = builder.clone().baseUrl(baseUrl).requestFactory(factory).build();
     }
 
     public void requireSender(String accountNumber) {
@@ -86,6 +97,10 @@ public class AccountClient {
             }
             throw new AccountServiceUnavailableException();
         } catch (RestClientException ex) {
+            throw new AccountServiceUnavailableException();
+        } catch (IllegalStateException ex) {
+            throw new AccountServiceUnavailableException();
+        } catch (IllegalArgumentException ex) {
             throw new AccountServiceUnavailableException();
         }
         if (account == null || accountNumber == null || !accountNumber.equals(account.getAccountNumber())

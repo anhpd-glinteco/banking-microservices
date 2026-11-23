@@ -13,12 +13,14 @@ public class HistoryController {
     private final HistoryService historyService;
 
     @GetMapping("/number/{accountNumber}")
-    public List<HistoryLog> byAccountNumber(@PathVariable String accountNumber) {
-        return historyService.forAccountNumber(accountNumber);
+    public List<HistoryLog> byAccountNumber(@PathVariable String accountNumber,
+            @RequestHeader(name = "X-TH7-Request-Id", required = false) String requestId) {
+        return historyService.forAccountNumber(accountNumber, requestId);
     }
 
     @GetMapping("/{accountId:\\d+}")
-    public List<HistoryLog> byLegacyAccountId(@PathVariable Long accountId) {
-        return historyService.forLegacyAccountId(accountId);
+    public List<HistoryLog> byLegacyAccountId(@PathVariable Long accountId,
+            @RequestHeader(name = "X-TH7-Request-Id", required = false) String requestId) {
+        return historyService.forLegacyAccountId(accountId, requestId);
     }
 }

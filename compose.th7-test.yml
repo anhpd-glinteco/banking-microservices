@@ -1,0 +1,287 @@
+name: bank-th7-test
+
+services:
+  mysql:
+    image: mysql:8.0.46
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-23306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'MYSQL_PWD="$${MYSQL_ROOT_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --user=root --batch --skip-column-names --execute="SELECT 1"'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  kafka:
+    image: apache/kafka:4.0.1
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:${KAFKA_HOST_PORT:-49092}
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "127.0.0.1:${KAFKA_HOST_PORT:-49092}:9094"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  redis:
+    image: redis:7.4.2
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-26379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  discovery-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: discovery-service
+    environment:
+      EUREKA_INSTANCE_HOSTNAME: discovery-service
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+      EUREKA_SERVER_ENABLE_SELF_PRESERVATION: "false"
+      EUREKA_SERVER_RESPONSE_CACHE_UPDATE_INTERVAL_MS: "1000"
+    ports:
+      - "127.0.0.1:${EUREKA_HOST_PORT:-18761}:8761"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  account-service-a:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: account-service
+    restart: "no"
+    environment: &account-environment
+      DB_HOST: mysql
+      DB_PORT: 3306
+      ACCOUNT_DB_NAME: bank_account
+      ACCOUNT_DB_USER: account_app
+      ACCOUNT_DB_PASSWORD: ${ACCOUNT_DB_PASSWORD:?Set ACCOUNT_DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: account-service-a
+      EUREKA_INSTANCE_INSTANCE_ID: account-service-a:8081
+      EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: "5"
+      EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: "15"
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+      SECURITY_PUBLIC_KEY: /run/bank-th7-keys/bank-public.pem
+      SECURITY_PRIVATE_KEY: /run/bank-th7-keys/bank-private.pem
+      TH7_INSTANCE_ID: account-service-a
+      TH7_TRACE_ENABLED: "true"
+    volumes: &account-key-volume
+      - "${TH7_KEY_DIR:?Set TH7_KEY_DIR}/bank-public.pem:/run/bank-th7-keys/bank-public.pem:ro"
+      - "${TH7_KEY_DIR:?Set TH7_KEY_DIR}/bank-private.pem:/run/bank-th7-keys/bank-private.pem:ro"
+    ports:
+      - "127.0.0.1:${ACCOUNT_A_HOST_PORT:-18081}:8081"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  account-service-b:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: account-service
+    restart: "no"
+    environment:
+      <<: *account-environment
+      EUREKA_INSTANCE_HOSTNAME: account-service-b
+      EUREKA_INSTANCE_INSTANCE_ID: account-service-b:8081
+      TH7_INSTANCE_ID: account-service-b
+    volumes: *account-key-volume
+    ports:
+      - "127.0.0.1:${ACCOUNT_B_HOST_PORT:-18085}:8081"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  transfer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: transfer-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      TRANSFER_DB_NAME: bank_transfer
+      TRANSFER_DB_USER: transfer_app
+      TRANSFER_DB_PASSWORD: ${TRANSFER_DB_PASSWORD:?Set TRANSFER_DB_PASSWORD}
+      ACCOUNT_SERVICE_CONNECT_TIMEOUT_MS: 2000
+      ACCOUNT_SERVICE_READ_TIMEOUT_MS: 3000
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+      SECURITY_PUBLIC_KEY: /run/bank-th7-keys/bank-public.pem
+    volumes: &public-key-volume
+      - "${TH7_KEY_DIR:?Set TH7_KEY_DIR}/bank-public.pem:/run/bank-th7-keys/bank-public.pem:ro"
+    ports:
+      - "127.0.0.1:${TRANSFER_HOST_PORT:-18082}:8082"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  transaction-history-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: transaction-history-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      HISTORY_DB_NAME: bank_history
+      HISTORY_DB_USER: history_app
+      HISTORY_DB_PASSWORD: ${HISTORY_DB_PASSWORD:?Set HISTORY_DB_PASSWORD}
+      ACCOUNT_SERVICE_CONNECT_TIMEOUT_MS: 2000
+      ACCOUNT_SERVICE_READ_TIMEOUT_MS: 3000
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+      SECURITY_PUBLIC_KEY: /run/bank-th7-keys/bank-public.pem
+    volumes: *public-key-volume
+    ports:
+      - "127.0.0.1:${HISTORY_HOST_PORT:-18084}:8084"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8084/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: notification-service
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+      SECURITY_PUBLIC_KEY: /run/bank-th7-keys/bank-public.pem
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      SPRING_KAFKA_LISTENER_AUTO_STARTUP: "false"
+    volumes: *public-key-volume
+    ports:
+      - "127.0.0.1:${NOTIFICATION_HOST_PORT:-18083}:8083"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.th7-test
+      args:
+        SERVICE: api-gateway
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "5"
+    ports:
+      - "127.0.0.1:${GATEWAY_HOST_PORT:-18080}:8080"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  mysql-data:
+    name: ${TH7_RUN_ID:?Set TH7_RUN_ID}-mysql
+  kafka-data:
+    name: ${TH7_RUN_ID:?Set TH7_RUN_ID}-kafka
+  redis-data:
+    name: ${TH7_RUN_ID:?Set TH7_RUN_ID}-redis
