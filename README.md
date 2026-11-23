@@ -111,6 +111,30 @@ VITE_API_URL=http://127.0.0.1:28080 VITE_LOAN_API_URL=http://127.0.0.1:28080 \
 
 Mở [Vite](http://127.0.0.1:5173) và dùng Mailpit trên cổng 28025 để lấy OTP. Nếu cổng 5173 đang bận, có thể đổi lệnh sang 5174. Cả hai cổng đã được cấu hình cho các lần gọi từ trình duyệt.
 
+## Cấu hình, xác thực và thử API
+
+**Cấu hình môi trường.** Lần chạy đầu, `init` in ra đường dẫn tệp `.env`. Tệp này và hai khóa JWT nằm ngoài repo. Dùng lại cùng ID ở những lần sau. Nếu trùng cổng, sửa bốn biến `FRONTEND_HOST_PORT`, `GATEWAY_HOST_PORT`, `EUREKA_HOST_PORT` và `MAILPIT_HOST_PORT` trong tệp của lượt chạy.
+
+**Xác thực.** Docker tự tạo khóa khi khởi tạo. Người dùng đăng ký trên frontend, lấy OTP ở Mailpit rồi đăng nhập bằng tên đăng nhập và mật khẩu đã đặt. Gateway health có thể kiểm tra ngay. API đọc tài khoản yêu cầu JWT và quyền truy cập vào tài khoản đó.
+
+**Thử nhanh bằng Postman.** Tạo biến `baseUrl` là `http://127.0.0.1:28080` nếu giữ cổng mặc định.
+
+| Bước | Request | Kết quả mong đợi |
+| --- | --- | --- |
+| 1 | `GET {{baseUrl}}/actuator/health` | HTTP 200, `{"status":"UP"}` |
+| 2 | `POST {{baseUrl}}/api/accounts/login` với body JSON bên dưới | HTTP 200, có `accessToken` và thông tin tài khoản |
+| 3 | `GET {{baseUrl}}/api/accounts/number/{{accountNumber}}` với Authorization loại **Bearer Token** | HTTP 200 khi token thuộc chủ tài khoản |
+| 4 | Gửi lại request ở bước 3 với Authorization loại **No Auth** | HTTP 401 |
+
+```json
+{
+  "username": "<tên đăng nhập bạn đã đăng ký>",
+  "password": "<mật khẩu bạn đã đặt>"
+}
+```
+
+Lấy `accessToken` và `account.accountNumber` từ phản hồi đăng nhập. Chỉ dùng dữ liệu thử và giữ token trong phiên Postman của bạn.
+
 ## Kiểm thử và vận hành
 
 ```bash
