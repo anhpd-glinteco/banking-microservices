@@ -9,7 +9,11 @@ Banking Microservices là dự án thực hành của Nhóm 14, mô phỏng các
 - **Lịch sử giao dịch** — tra cứu giao dịch theo tài khoản và quyền truy cập của người dùng.
 - **Khoản vay** — gửi yêu cầu vay, theo dõi khoản vay và xử lý phê duyệt hoặc trả nợ theo vai trò.
 
-## Kiến trúc
+## Tổng quan hệ thống
+
+Giao diện web gửi yêu cầu qua API Gateway. Gateway tìm dịch vụ đã đăng ký trong Eureka. Khi người dùng chuyển tiền, Transfer hỏi Account để kiểm tra thông tin tài khoản rồi gửi sự kiện qua Kafka. Account xử lý số dư, Transfer cập nhật trạng thái và History ghi lại kết quả để tra cứu. Giao diện hỏi lại trạng thái trong lúc giao dịch được xử lý.
+
+### Kiến trúc và công nghệ
 
 | Thành phần | Vai trò |
 | --- | --- |
@@ -21,7 +25,24 @@ Banking Microservices là dự án thực hành của Nhóm 14, mô phỏng các
 
 Transfer và History tìm Account qua Eureka và Spring Cloud LoadBalancer. Hai instance Account dùng chung schema sở hữu bởi Account. Transfer và History có schema riêng. MySQL, Kafka và Redis sử dụng named volume theo từng lượt triển khai. [Sơ đồ và thiết kế triển khai](docs/th8/deployment-design.md)
 
+### Cấu trúc mã nguồn
+
+| Thư mục hoặc tệp | Nội dung |
+| --- | --- |
+| `frontend/` | Giao diện React/Vite và cấu hình Nginx |
+| `api-gateway/`, `discovery-service/` | Điểm vào API và máy chủ Eureka |
+| `account-service/`, `transfer-service/`, `transaction-history-service/`, `notification-service/` | Các dịch vụ nghiệp vụ Spring Boot trên Java 17 |
+| `bank-common/` | Kiểu dữ liệu và cấu hình dùng chung |
+| `compose.th8.yml`, `database/th8/`, `scripts/th8.sh` | Đóng gói, tạo schema và vận hành môi trường demo |
+| `docs/`, `integration/` | Thiết kế, runbook và tài liệu kiểm thử |
+
 ## Cài đặt và chạy trên máy
+
+| Cách chạy | Dùng khi |
+| --- | --- |
+| Docker Compose qua script | Chạy toàn bộ hệ thống để dùng thử hoặc trình bày |
+| Docker Compose trực tiếp | Điều khiển stack bằng lệnh Docker và xem log từng dịch vụ |
+| Vite chạy trên máy, backend trong Docker | Sửa giao diện và xem thay đổi ngay |
 
 ### 1. Chuẩn bị môi trường
 
@@ -61,6 +82,34 @@ bash scripts/th8.sh status demo01
 | [Mailpit](http://127.0.0.1:28025) | Đọc OTP gửi đến địa chỉ thử nghiệm |
 
 Mở frontend, chọn đăng ký và dùng email thử nghiệm như `demo@example.invalid`. Lấy OTP từ Mailpit, hoàn tất đăng ký rồi đăng nhập. Để kiểm thử chuyển tiền với số dư mẫu, chạy bộ kiểm thử bên dưới. Bộ kiểm thử tự tạo dữ liệu giả cho lượt chạy.
+
+### Mở lại một lượt demo đã có
+
+Khởi động Docker Engine, vào thư mục repo rồi chạy `bash scripts/th8.sh up demo01`. Dùng đúng ID đã tạo trước đó để giữ dữ liệu và cấu hình. Sau khi stack healthy, mở lại [frontend](http://127.0.0.1:25173).
+
+### Dùng lệnh Docker Compose trực tiếp
+
+Chạy `bash scripts/th8.sh init demo01` một lần. Thay đường dẫn tệp cấu hình trong ví dụ bằng đường dẫn `init` in ra rồi chạy từ thư mục gốc repo.
+
+```bash
+ENV_FILE="$HOME/.local/state/bank-th8/demo01/.env"
+docker compose -p bank-th8-demo01 --env-file "$ENV_FILE" -f compose.th8.yml up -d --build --wait --wait-timeout 300
+docker compose -p bank-th8-demo01 --env-file "$ENV_FILE" -f compose.th8.yml ps
+docker compose -p bank-th8-demo01 --env-file "$ENV_FILE" -f compose.th8.yml logs --tail 50 transfer-service
+```
+
+### Phát triển giao diện với backend Docker
+
+Khởi động stack theo cách trên. Cài Node.js 22.12 trở lên trong nhánh 22.x, rồi chạy Vite từ thư mục `frontend/`. Gateway trên cổng 28080 chuyển tiếp các API tài khoản, khoản vay, chuyển tiền và lịch sử.
+
+```bash
+cd frontend
+npm ci
+VITE_API_URL=http://127.0.0.1:28080 VITE_LOAN_API_URL=http://127.0.0.1:28080 \
+  npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+Mở [Vite](http://127.0.0.1:5173) và dùng Mailpit trên cổng 28025 để lấy OTP. Nếu cổng 5173 đang bận, có thể đổi lệnh sang 5174. Cả hai cổng đã được cấu hình cho các lần gọi từ trình duyệt.
 
 ## Kiểm thử và vận hành
 
