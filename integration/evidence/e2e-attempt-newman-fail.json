@@ -1,0 +1,79 @@
+{
+  "run_id": "th6-fixed-url-demo",
+  "utc": "2026-11-22T18:02:01.207511+00:00",
+  "result": "FAIL",
+  "error": "Newman failed in 01 Success. See sanitized request and assertion results.",
+  "cases": [
+    {
+      "folder": "01 Success",
+      "newman_exit": 1,
+      "requests": [
+        {
+          "request": "Đăng nhập",
+          "http": 200,
+          "assertions": [
+            {
+              "name": "HTTP 200 và JWT",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "request": "Gửi lệnh",
+          "http": null,
+          "assertions": [
+            {
+              "name": "HTTP 200",
+              "pass": false
+            }
+          ]
+        },
+        {
+          "request": "Đợi SUCCESS",
+          "http": 404,
+          "assertions": [
+            {
+              "name": "SUCCESS trong 60 giây",
+              "pass": false
+            }
+          ]
+        },
+        {
+          "request": "Đợi lịch sử",
+          "http": null,
+          "assertions": []
+        }
+      ]
+    }
+  ],
+  "fixture_setup_http": [
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/otp/generate",
+      "status": 200,
+      "elapsed_ms": 737
+    },
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/users/register-with-otp",
+      "status": 200,
+      "elapsed_ms": 947
+    },
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/otp/generate",
+      "status": 200,
+      "elapsed_ms": 8
+    },
+    {
+      "run_id": "th6-fixed-url-demo",
+      "method": "POST",
+      "path": "/api/accounts/users/register-with-otp",
+      "status": 200,
+      "elapsed_ms": 174
+    }
+  ]
+}

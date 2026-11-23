@@ -1,0 +1,270 @@
+{
+  "info": {
+    "name": "TH6 – Tích hợp chuyển tiền",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Success",
+      "item": [
+        {
+          "name": "Đăng nhập",
+          "request": {
+            "method": "POST",
+            "url": "{{accountUrl}}/api/accounts/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{username}}\",\"password\":\"{{password}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200 và JWT\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().accessToken).to.be.a(\"string\");",
+                  "});",
+                  "pm.environment.set(\"token\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gửi lệnh",
+          "request": {
+            "method": "POST",
+            "url": "{{transferUrl}}/api/transfers",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fromAccountNumber\":\"{{sender}}\",\"toAccountNumber\":\"{{recipient}}\",\"amount\":1000,\"description\":\"TH6 demo\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const tx = pm.response.json();",
+                  "pm.test(\"PROCESSING có mã giao dịch\", () => {",
+                  "    pm.expect(tx.status).to.equal(\"PROCESSING\");",
+                  "    pm.expect(tx.id).to.be.a(\"string\");",
+                  "});",
+                  "pm.environment.set(\"transactionId\", tx.id);",
+                  "pm.environment.set(\"deadline\", String(Date.now() + 60000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đợi SUCCESS",
+          "request": {
+            "method": "GET",
+            "url": "{{transferUrl}}/api/transfers/{{transactionId}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const ready = body.status === \"SUCCESS\";",
+                  "if (ready) pm.environment.set(\"deadline\", String(Date.now() + 60000));",
+                  "if (!ready && pm.response.code === 200 && Date.now() < Number(pm.environment.get(\"deadline\"))) {",
+                  "    pm.execution.setNextRequest(pm.info.requestName);",
+                  "} else {",
+                  "    pm.test(\"SUCCESS trong 60 giây\", () => {",
+                  "        pm.response.to.have.status(200);",
+                  "        pm.expect(ready).to.equal(true);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đợi lịch sử",
+          "request": {
+            "method": "GET",
+            "url": "{{historyUrl}}/api/history/number/{{sender}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const ready = Array.isArray(body) && body.some(row => row.transactionId === pm.environment.get(\"transactionId\"));",
+                  "if (!ready && pm.response.code === 200 && Date.now() < Number(pm.environment.get(\"deadline\"))) {",
+                  "    pm.execution.setNextRequest(pm.info.requestName);",
+                  "} else {",
+                  "    pm.test(\"Lịch sử có mã giao dịch\", () => {",
+                  "        pm.response.to.have.status(200);",
+                  "        pm.expect(ready).to.equal(true);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Missing account",
+      "item": [
+        {
+          "name": "Tài khoản nhận không tồn tại",
+          "request": {
+            "method": "POST",
+            "url": "{{transferUrl}}/api/transfers",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fromAccountNumber\":\"{{sender}}\",\"toAccountNumber\":\"{{missing}}\",\"amount\":1001,\"description\":\"TH6 demo\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Provider unavailable",
+      "item": [
+        {
+          "name": "Account Service đã dừng",
+          "request": {
+            "method": "POST",
+            "url": "{{transferUrl}}/api/transfers",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fromAccountNumber\":\"{{sender}}\",\"toAccountNumber\":\"{{recipient}}\",\"amount\":1002,\"description\":\"TH6 demo\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 503\", () => pm.response.to.have.status(503));",
+                  "pm.test(\"Thông báo lỗi phụ thuộc\", () => pm.expect(pm.response.json().message).to.equal(\"Account service unavailable\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "accountUrl",
+      "value": "http://127.0.0.1:28081"
+    },
+    {
+      "key": "transferUrl",
+      "value": "http://127.0.0.1:28082"
+    },
+    {
+      "key": "historyUrl",
+      "value": "http://127.0.0.1:28084"
+    }
+  ]
+}

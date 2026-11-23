@@ -1,0 +1,22 @@
+[
+  {
+    "module": "account-service",
+    "result": "BUILD SUCCESS",
+    "tests": 18
+  },
+  {
+    "module": "bank-common",
+    "result": "BUILD SUCCESS",
+    "tests": 0
+  },
+  {
+    "module": "transaction-history-service",
+    "result": "BUILD SUCCESS",
+    "tests": 14
+  },
+  {
+    "module": "transfer-service",
+    "result": "BUILD SUCCESS",
+    "tests": 37
+  }
+]
